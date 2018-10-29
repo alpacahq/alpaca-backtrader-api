@@ -1,2 +1,5 @@
 v0.1, 2018-10-18
     -- Initial release
+v0.11, 2018-10-29
+    -- Changed 'practice' keyword to 'paper'
+    -- pep8 compliant
