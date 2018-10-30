@@ -1,3 +1,6 @@
+[![PyPI version](https://badge.fury.io/py/alpaca-backtrader-api.svg)](https://badge.fury.io/py/alpaca-backtrader-api)
+[![CircleCI](https://circleci.com/gh/alpacahq/alpaca-backtrader-api.svg?style=shield)](https://circleci.com/gh/alpacahq/alpaca-backtrader-api)
+
 # alpaca-backtrader-api
 
 `alpaca-backtrader-api` is a python library for the Alpaca trade API
