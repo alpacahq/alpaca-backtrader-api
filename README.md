@@ -37,7 +37,7 @@ Replace <key_id> and <secret_key> with what you get from the web console.
   store = alpaca_backtrader_api.AlpacaStore(
       key_id='',
       secret_key='',
-      practice=True
+      paper=True
   )
 
   broker = store.getbroker()  # or just alpaca_backtrader_api.AlpacaBroker
@@ -61,9 +61,9 @@ The Alpaca API requires API key ID and secret key, which you can obtain from the
 web console after you sign in.  You can set them in the AlpacaStore constructor,
 using 'key_id' and 'secret_key'.
 
-## Practice/Live mode
+## Paper/Live mode
 
-The 'practice' parameter is default to False, which allows live trading.
+The 'paper' parameter is default to False, which allows live trading.
 If you set it to True, then you are in the paper trading mode.
 
 ## Support and Contribution

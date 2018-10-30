@@ -189,7 +189,7 @@ def runstrategy():
     storekwargs = dict(
         key_id=args.keyid,
         secret_key=args.secretkey,
-        practice=not args.live,
+        paper=not args.live,
     )
 
     store = alpaca_backtrader_api.AlpacaStore(**storekwargs)
@@ -331,7 +331,7 @@ def parse_args(pargs=None):
 
     parser.add_argument('--live', default=None,
                         required=False, action='store',
-                        help='Go to live server rather than practice')
+                        help='Go to live server rather than paper')
 
     parser.add_argument('--qcheck', default=0.5, type=float,
                         required=False, action='store',

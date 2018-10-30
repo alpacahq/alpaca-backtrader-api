@@ -233,8 +233,6 @@ class AlpacaBroker(with_metaclass(MetaAlpacaBroker, BrokerBase)):
         pos = self.getposition(data, clone=False)
         psize, pprice, opened, closed = pos.update(size, price)
 
-        comminfo = self.getcommissioninfo(data)
-
         closedvalue = closedcomm = 0.0
         openedvalue = openedcomm = 0.0
         margin = pnl = 0.0
@@ -312,7 +310,8 @@ class AlpacaBroker(with_metaclass(MetaAlpacaBroker, BrokerBase)):
         return self._transmit(order)
 
     def cancel(self, order):
-        o = self.orders[order.ref]
+        if not self.orders.get(order.ref, False):
+            return
         if order.status == Order.Cancelled:  # already cancelled
             return
 

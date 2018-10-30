@@ -153,7 +153,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
 
       - ``secret_key`` (default: ``None``): Alpaca API secret key
 
-      - ``practice`` (default: ``False``): use the test environment
+      - ``paper`` (default: ``False``): use the paper trading environment
 
       - ``account_tmout`` (default: ``10.0``): refresh period for account
         value/cash refresh
@@ -165,12 +165,12 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
     params = (
         ('key_id', ''),
         ('secret_key', ''),
-        ('practice', False),
+        ('paper', False),
         ('account_tmout', 10.0),  # account balance refresh timeout
     )
 
     _DTEPOCH = datetime(1970, 1, 1)
-    _ENVPRACTICE = 'practice'
+    _ENVPRACTICE = 'paper'
     _ENVLIVE = 'live'
     _ENV_PRACTICE_URL = 'https://paper-api.alpaca.markets'
     _ENV_LIVE_URL = ''
@@ -198,7 +198,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
         self._ordersrev = collections.OrderedDict()  # map oid to order.ref
         self._transpend = collections.defaultdict(collections.deque)
 
-        if self.p.practice:
+        if self.p.paper:
             self._oenv = self._ENVPRACTICE
             self.p.base_url = self._ENV_PRACTICE_URL
         else:
@@ -512,7 +512,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                 o = self.oapi.submit_order(**okwargs)
             except Exception as e:
                 self.put_notification(e)
-                self.broker._reject(order.ref)
+                self.broker._reject(oref)
                 return
             try:
                 oid = o.id
@@ -575,15 +575,12 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
         # Invoked from Streaming Events. May actually receive an event for an
         # oid which has not yet been returned after creating an order. Hence
         # store if not yet seen, else forward to processer
-        # if not trans.getattr('order', False):  # We only process trade updates
-        #     return
+
         oid = trans['id']
 
-        try:
-            oref = self._ordersrev[oid]
-            self._process_transaction(oid, trans)
-        except KeyError:  # not yet seen, keep as pending
+        if not self._ordersrev.get(oid, False):
             self._transpend[oid].append(trans)
+        self._process_transaction(oid, trans)
 
     _X_ORDER_FILLED = ('partially_filled', 'filled', )
 
