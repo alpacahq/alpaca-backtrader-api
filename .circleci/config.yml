@@ -1,0 +1,43 @@
+version: 2
+jobs:
+  build-python36:
+    docker:
+      - image: python:3.6.7
+    working_directory: ~/repo
+    steps:
+      - run: echo "hello python 3.6.7"
+      - checkout
+ 
+      # Download and cache dependencies
+      - restore_cache:
+          keys:
+          - v1-dependencies-{{ checksum "setup.py" }}
+          # fallback to using the latest cache if no exact match is found
+          - v1-dependencies-
+
+      # run tests!
+      # this example uses Django's built-in test-runner
+      # other common Python testing frameworks include pytest and nose
+      # https://pytest.org
+      # https://nose.readthedocs.io
+      - run:
+          name: run tests
+          command: |
+            python setup.py install
+            pip install flake8 && flake8 alpaca_backtrader_api
+            python setup.py test
+
+      - save_cache:
+          paths:
+            - ./eggs
+          key: v1-dependencies-{{ checksum "setup.py" }}
+
+      - store_artifacts:
+          path: test-reports3.6.7
+          destination: test-reports3.6.7
+
+workflows:
+  version: 2
+  build:
+    jobs:
+      - build-python36
