@@ -60,12 +60,12 @@ class API(tradeapi.REST):
         # Added the try block
         try:
             return super(API, self)._request(method, path, data, prefix)
-        except requests.RequestException as e:
+        except requests.RequestException:
             return AlpacaRequestError().error_response
         except tradeapi.rest.APIError as e:
             # changed from raise to return
             return e._error
-        except Exception as e:
+        except Exception:
             return AlpacaNetworkError().error_response
 
         return None
@@ -516,7 +516,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                 return
             try:
                 oid = o.id
-            except Exception as e:
+            except Exception:
                 if 'code' in o._raw:
                     self.put_notification(o.message)
                 else:
