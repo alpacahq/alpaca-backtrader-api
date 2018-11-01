@@ -60,9 +60,6 @@ class TestStrategy(bt.Strategy):
         if order.status in [order.Completed, order.Cancelled, order.Rejected]:
             self.order = None
 
-        # print('-' * 50, 'ORDER BEGIN', datetime.datetime.now())
-        # print(order)
-        # print('-' * 50, 'ORDER END')
         print('{}: Order ref: {} / Type {} / Status {}'.format(
             self.data.datetime.date(0),
             order.ref, 'Buy' * order.isbuy() or 'Sell',
@@ -164,14 +161,8 @@ class TestStrategy(bt.Strategy):
 
         if self.datastatus:
             self.datastatus += 1
-            # if self.position != self.last_pos:
-            #     print(self.position)
-            #     self.last_pos = self.position
 
     def start(self):
-        # if self.data0.get('contractdetails', None) is not None:
-        #     print('-- Contract Details:')
-        #     print(self.data0.contractdetails)
 
         header = ['Datetime', 'Open', 'High', 'Low', 'Close', 'Volume',
                   'OpenInterest', 'SMA']

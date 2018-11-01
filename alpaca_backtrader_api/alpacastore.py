@@ -60,13 +60,17 @@ class API(tradeapi.REST):
         # Added the try block
         try:
             return super(API, self)._request(method, path, data, prefix)
-        except requests.RequestException:
-            return AlpacaRequestError().error_response
+        except requests.RequestException as e:
+            resp = AlpacaRequestError().error_response
+            resp['description'] = str(e)
+            return resp
         except tradeapi.rest.APIError as e:
             # changed from raise to return
             return e._error
-        except Exception:
-            return AlpacaNetworkError().error_response
+        except Exception as e:
+            resp = AlpacaNetworkError().error_response
+            resp['description'] = str(e)
+            return resp
 
         return None
 
@@ -126,7 +130,6 @@ class Streamer():
         self.q.put(msg)
 
     async def on_trade(self, conn, stream, msg):
-        print(msg)
         self.q.put(msg)
 
 
