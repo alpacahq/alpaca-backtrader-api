@@ -42,14 +42,14 @@ store = alpaca_backtrader_api.AlpacaStore(
     paper=True
 )
 
-broker = store.getbroker()  # or just alpaca_backtrader_api.AlpacaBroker
+broker = store.getbroker()  # or just alpaca_backtrader_api.AlpacaBroker()
 cerebro.setbroker(broker)
 
-DataFactory = store.getdata() # or use alpaca_backtrader_api.AlpacaData
+DataFactory = store.getdata # or use alpaca_backtrader_api.AlpacaData
 data0 = DataFactory(dataname='AAPL', timeframe=bt.TimeFrame.TFrame("Days"))  # Supported timeframes: "Days"/"Minutes"
 cerebro.adddata(data0)
 
-cerebro.run()
+cerebro.run(exactbars=1)
 cerebro.plot()
 ```
 
