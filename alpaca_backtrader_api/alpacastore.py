@@ -469,8 +469,8 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                 self.put_notification(accinfo.message)
                 continue
             try:
-                self._cash = accinfo.cash
-                self._value = accinfo.portfolio_value
+                self._cash = float(accinfo.cash)
+                self._value = float(accinfo.portfolio_value)
             except KeyError:
                 pass
 
