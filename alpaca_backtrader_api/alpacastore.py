@@ -59,7 +59,7 @@ class API(tradeapi.REST):
 
         # Added the try block
         try:
-            return super(API, self)._request(method, path, data, prefix)
+            return super(API, self)._request(method, path, data)
         except requests.RequestException as e:
             resp = AlpacaRequestError().error_response
             resp['description'] = str(e)
