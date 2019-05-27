@@ -37,8 +37,8 @@ cerebro = bt.Cerebro()
 cerebro.addstrategy(SmaCross)
 
 store = alpaca_backtrader_api.AlpacaStore(
-    key_id='',
-    secret_key='',
+    key_id=<key_id>,
+    secret_key=<secret_key>,
     paper=True
 )
 
@@ -46,7 +46,7 @@ broker = store.getbroker()  # or just alpaca_backtrader_api.AlpacaBroker()
 cerebro.setbroker(broker)
 
 DataFactory = store.getdata # or use alpaca_backtrader_api.AlpacaData
-data0 = DataFactory(dataname='AAPL', timeframe=bt.TimeFrame.TFrame("Days"))  # Supported timeframes: "Days"/"Minutes"
+data0 = DataFactory(dataname='AAPL', historical=True, fromdate=datetime(2015, 1,1), timeframe=bt.TimeFrame.TFrame("Days"))  # Supported timeframes: "Days"/"Minutes"
 cerebro.adddata(data0)
 
 cerebro.run(exactbars=1)
