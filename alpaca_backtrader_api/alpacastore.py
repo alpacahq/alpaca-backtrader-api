@@ -55,11 +55,11 @@ class AlpacaNetworkError(AlpacaError):
 
 class API(tradeapi.REST):
 
-    def _request(self, method, path, data=None, prefix='/v1'):
+    def _request(self, method, path, data=None):
 
         # Added the try block
         try:
-            return super(API, self)._request(method, path, data, prefix)
+            return super(API, self)._request(method, path, data)
         except requests.RequestException as e:
             resp = AlpacaRequestError().error_response
             resp['description'] = str(e)
@@ -170,6 +170,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
         ('secret_key', ''),
         ('paper', False),
         ('account_tmout', 10.0),  # account balance refresh timeout
+        ('api_version', None)
     )
 
     _DTEPOCH = datetime(1970, 1, 1)
@@ -207,7 +208,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
         else:
             self._oenv = self._ENVLIVE
             self.p.base_url = self._ENV_LIVE_URL
-        self.oapi = API(self.p.key_id, self.p.secret_key, self.p.base_url)
+        self.oapi = API(self.p.key_id, self.p.secret_key, self.p.base_url, self.p.api_version)
 
         self._cash = 0.0
         self._value = 0.0
