@@ -470,8 +470,17 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                 self.put_notification(accinfo.message)
                 continue
             try:
-                self._cash = float(accinfo.cash)
-                self._value = float(accinfo.portfolio_value)
+                # make sure cash is a number
+                if type(accinfo.cash) == str:
+                    self._cash = float(accinfo.cash) 
+                else:
+                    self._cash = accinfo.cash
+                    
+                # make sure portfolio_value is a number
+                if type(accinfo.portfolio_value) == str:
+                    self._cash = float(accinfo.portfolio_value) 
+                else:
+                    self._cash = accinfo.portfolio_value
             except KeyError:
                 pass
 
