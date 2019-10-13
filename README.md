@@ -50,6 +50,7 @@ store = alpaca_backtrader_api.AlpacaStore(
 )
 
 if not ALPACA_PAPER:
+  broker = store.getbroker()
   cerebro.setbroker(broker)
 
 data = store.getdata(dataname='AAPL', historical=True, fromdate=datetime(
