@@ -59,8 +59,8 @@ cerebro.adddata(data)
 
 print('Starting Portfolio Value: %.2f' % cerebro.broker.getvalue())
 cerebro.run()
-cerebro.plot()
 print('Final Portfolio Value: %.2f' % cerebro.broker.getvalue())
+cerebro.plot()
 ```
 
 ## API Document
