@@ -313,6 +313,17 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
 
     def candles(self, dataname, dtbegin, dtend, timeframe, compression,
                 candleFormat, includeFirst):
+        """
+
+        :param dataname: symbol name. e.g AAPL
+        :param dtbegin: datetime start
+        :param dtend: datetime end
+        :param timeframe: bt.TimeFrame
+        :param compression:
+        :param candleFormat: (bidask, midpoint, trades)
+        :param includeFirst:
+        :return:
+        """
 
         kwargs = locals().copy()
         kwargs.pop('self')
