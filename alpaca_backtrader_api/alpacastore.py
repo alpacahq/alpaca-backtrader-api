@@ -320,7 +320,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
         :param dtbegin: datetime start
         :param dtend: datetime end
         :param timeframe: bt.TimeFrame
-        :param compression:
+        :param compression: distance between samples. e.g if 1 => get sample every day. if 3 => get sample every 3 days
         :param candleFormat: (bidask, midpoint, trades)
         :param includeFirst:
         :return:
@@ -363,11 +363,11 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                 start_dt = None
                 if dtkwargs['start']:
                     start_dt = dtkwargs['start'].isoformat()
-
-                response = self.oapi.polygon.historic_agg(granularity,
-                                                          dataname,
-                                                          _from=start_dt,
-                                                          to=end_dt)
+                response = self.oapi.polygon.historic_agg_v2(dataname,
+                                                             compression,
+                                                             granularity,
+                                                             _from=start_dt,
+                                                             to=end_dt)
             except AlpacaError as e:
                 print(str(e))
                 q.put(e.error_response)
