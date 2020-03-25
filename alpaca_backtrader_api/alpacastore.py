@@ -404,7 +404,8 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                                       'volume': 'sum'})
         cdl = cdl.loc[dtbegin.replace(tzinfo=pytz.UTC):dtend.replace(tzinfo=pytz.UTC)].dropna(subset=['high'])
         records = cdl.reset_index().to_dict('records')
-        field = 'day' if 'd' in granularity else 'timestamp'
+        # field = 'day' if 'd' in granularity else 'timestamp'
+        field = 'timestamp'
         for r in records:
             r['time'] = r[field]
             q.put(r)
