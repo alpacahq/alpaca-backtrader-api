@@ -8,6 +8,7 @@ import threading
 import asyncio
 
 import alpaca_trade_api as tradeapi
+import pytz
 import requests
 import pandas as pd
 
@@ -401,7 +402,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                                       'low': 'min',
                                       'close': 'last',
                                       'volume': 'sum'})
-        cdl = cdl.loc[dtbegin:dtend].dropna(subset=['high'])
+        cdl = cdl.loc[dtbegin.replace(tzinfo=pytz.UTC):dtend.replace(tzinfo=pytz.UTC)].dropna(subset=['high'])
         records = cdl.reset_index().to_dict('records')
         field = 'day' if 'd' in granularity else 'timestamp'
         for r in records:
