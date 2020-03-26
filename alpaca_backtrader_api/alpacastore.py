@@ -13,6 +13,7 @@ import requests
 import pandas as pd
 
 import backtrader as bt
+from alpaca_trade_api.polygon.entity import NY
 from backtrader.metabase import MetaParams
 from backtrader.utils.py3 import queue, with_metaclass
 
@@ -402,7 +403,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                                       'low': 'min',
                                       'close': 'last',
                                       'volume': 'sum'})
-        cdl = cdl.loc[dtbegin.replace(tzinfo=pytz.UTC):dtend.replace(tzinfo=pytz.UTC)].dropna(subset=['high'])
+        cdl = cdl.loc[dtbegin.replace(tzinfo=pytz.timezone(NY)):dtend.replace(tzinfo=pytz.timezone(NY))].dropna(subset=['high'])
         records = cdl.reset_index().to_dict('records')
         # field = 'day' if 'd' in granularity else 'timestamp'
         field = 'timestamp'
