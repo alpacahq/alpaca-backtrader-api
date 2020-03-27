@@ -19,6 +19,7 @@ $ pip3 install alpaca-backtrader-api
 ```
 
 ## Example
+#### This example only works if you have a funded brokerage account or another means of accessing Polygon data.
 
 In order to call Alpaca's trade API, you need to obtain API key pairs.
 Replace <key_id> and <secret_key> with what you get from the web console.

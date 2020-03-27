@@ -208,7 +208,10 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
         else:
             self._oenv = self._ENVLIVE
             self.p.base_url = self._ENV_LIVE_URL
-        self.oapi = API(self.p.key_id, self.p.secret_key, self.p.base_url, self.p.api_version)
+        self.oapi = API(self.p.key_id,
+                        self.p.secret_key,
+                        self.p.base_url,
+                        self.p.api_version)
 
         self._cash = 0.0
         self._value = 0.0
