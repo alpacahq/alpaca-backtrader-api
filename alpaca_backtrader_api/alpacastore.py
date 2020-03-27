@@ -405,10 +405,8 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                                       'volume': 'sum'})
         cdl = cdl.loc[dtbegin.replace(tzinfo=pytz.timezone(NY)):dtend.replace(tzinfo=pytz.timezone(NY))].dropna(subset=['high'])
         records = cdl.reset_index().to_dict('records')
-        # field = 'day' if 'd' in granularity else 'timestamp'
-        field = 'timestamp'
         for r in records:
-            r['time'] = r[field]
+            r['time'] = r['timestamp']
             q.put(r)
         q.put({})  # end of transmission
 
