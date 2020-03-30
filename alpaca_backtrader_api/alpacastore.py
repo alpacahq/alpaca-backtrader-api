@@ -8,10 +8,12 @@ import threading
 import asyncio
 
 import alpaca_trade_api as tradeapi
+import pytz
 import requests
 import pandas as pd
 
 import backtrader as bt
+from alpaca_trade_api.polygon.entity import NY
 from backtrader.metabase import MetaParams
 from backtrader.utils.py3 import queue, with_metaclass
 
@@ -316,6 +318,17 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
 
     def candles(self, dataname, dtbegin, dtend, timeframe, compression,
                 candleFormat, includeFirst):
+        """
+
+        :param dataname: symbol name. e.g AAPL
+        :param dtbegin: datetime start
+        :param dtend: datetime end
+        :param timeframe: bt.TimeFrame
+        :param compression: distance between samples. e.g if 1 => get sample every day. if 3 => get sample every 3 days
+        :param candleFormat: (bidask, midpoint, trades)
+        :param includeFirst:
+        :return:
+        """
 
         kwargs = locals().copy()
         kwargs.pop('self')
@@ -354,11 +367,11 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                 start_dt = None
                 if dtkwargs['start']:
                     start_dt = dtkwargs['start'].isoformat()
-
-                response = self.oapi.polygon.historic_agg(granularity,
-                                                          dataname,
-                                                          _from=start_dt,
-                                                          to=end_dt)
+                response = self.oapi.polygon.historic_agg_v2(dataname,
+                                                             compression,
+                                                             granularity,
+                                                             _from=start_dt,
+                                                             to=end_dt)
             except AlpacaError as e:
                 print(str(e))
                 q.put(e.error_response)
@@ -393,11 +406,10 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                                       'low': 'min',
                                       'close': 'last',
                                       'volume': 'sum'})
-        cdl = cdl.loc[dtbegin:dtend].dropna(subset=['high'])
+        cdl = cdl.loc[dtbegin.replace(tzinfo=pytz.timezone(NY)):dtend.replace(tzinfo=pytz.timezone(NY))].dropna(subset=['high'])
         records = cdl.reset_index().to_dict('records')
-        field = 'day' if 'd' in granularity else 'timestamp'
         for r in records:
-            r['time'] = r[field]
+            r['time'] = r['timestamp']
             q.put(r)
         q.put({})  # end of transmission
 

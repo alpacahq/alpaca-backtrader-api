@@ -90,7 +90,7 @@ class AlpacaData(with_metaclass(MetaAlpacaData, DataBase)):
 
     This data feed supports only this mapping of ``timeframe`` and
     ``compression``, which comply with the definitions in the Alpaca API
-    Developer's Guid::
+    Developer's Guide::
 
         (TimeFrame.Seconds, 5): 'S5',
         (TimeFrame.Seconds, 10): 'S10',
