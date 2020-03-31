@@ -324,7 +324,8 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
         :param dtbegin: datetime start
         :param dtend: datetime end
         :param timeframe: bt.TimeFrame
-        :param compression: distance between samples. e.g if 1 => get sample every day. if 3 => get sample every 3 days
+        :param compression: distance between samples. e.g if 1 =>
+                 get sample every day. if 3 => get sample every 3 days
         :param candleFormat: (bidask, midpoint, trades)
         :param includeFirst:
         :return:
@@ -406,7 +407,10 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                                       'low': 'min',
                                       'close': 'last',
                                       'volume': 'sum'})
-        cdl = cdl.loc[dtbegin.replace(tzinfo=pytz.timezone(NY)):dtend.replace(tzinfo=pytz.timezone(NY))].dropna(subset=['high'])
+        cdl = cdl.loc[
+              dtbegin.replace(tzinfo=pytz.timezone(NY)):
+              dtend.replace(tzinfo=pytz.timezone(NY))
+              ].dropna(subset=['high'])
         records = cdl.reset_index().to_dict('records')
         for r in records:
             r['time'] = r['timestamp']
