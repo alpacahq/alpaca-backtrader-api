@@ -3,7 +3,7 @@ from __future__ import (absolute_import, division, print_function,
 
 import collections
 from datetime import datetime, timedelta
-import dateutil
+from dateutil.parser import parse as date_parse
 import time as _time
 import threading
 import asyncio
@@ -340,6 +340,16 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
         t.start()
         return q
 
+    @staticmethod
+    def iso_date(date_str):
+        """
+        this method will make sure that dates are formatted properly
+        as with isoformat
+        :param date_str:
+        :return: YYYY-MM-DD date formatted
+        """
+        return date_parse(date_str).date().isoformat()
+
     def _t_candles(self, dataname, dtbegin, dtend, timeframe, compression,
                    candleFormat, includeFirst, q):
 
@@ -369,11 +379,13 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                 start_dt = None
                 if dtkwargs['start']:
                     start_dt = dtkwargs['start'].isoformat()
-                response = self.oapi.polygon.historic_agg_v2(dataname,
-                                                             compression,
-                                                             granularity,
-                                                             _from=dateutil.parser.parse(start_dt).date().isoformat(),
-                                                             to=dateutil.parser.parse(end_dt).date().isoformat())
+                response = \
+                    self.oapi.polygon.historic_agg_v2(
+                        dataname,
+                        compression,
+                        granularity,
+                        _from=self.iso_date(start_dt),
+                        to=self.iso_date(end_dt))
             except AlpacaError as e:
                 print(str(e))
                 q.put(e.error_response)
