@@ -3,6 +3,7 @@ from __future__ import (absolute_import, division, print_function,
 
 import collections
 from datetime import datetime, timedelta
+import dateutil
 import time as _time
 import threading
 import asyncio
@@ -371,8 +372,8 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                 response = self.oapi.polygon.historic_agg_v2(dataname,
                                                              compression,
                                                              granularity,
-                                                             _from=start_dt,
-                                                             to=end_dt)
+                                                             _from=dateutil.parser.parse(start_dt).date().isoformat(),
+                                                             to=dateutil.parser.parse(end_dt).date().isoformat())
             except AlpacaError as e:
                 print(str(e))
                 q.put(e.error_response)
