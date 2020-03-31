@@ -210,7 +210,10 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
         else:
             self._oenv = self._ENVLIVE
             self.p.base_url = self._ENV_LIVE_URL
-        self.oapi = API(self.p.key_id, self.p.secret_key, self.p.base_url, self.p.api_version)
+        self.oapi = API(self.p.key_id,
+                        self.p.secret_key,
+                        self.p.base_url,
+                        self.p.api_version)
 
         self._cash = 0.0
         self._value = 0.0
@@ -405,10 +408,8 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                                       'volume': 'sum'})
         cdl = cdl.loc[dtbegin.replace(tzinfo=pytz.timezone(NY)):dtend.replace(tzinfo=pytz.timezone(NY))].dropna(subset=['high'])
         records = cdl.reset_index().to_dict('records')
-        # field = 'day' if 'd' in granularity else 'timestamp'
-        field = 'timestamp'
         for r in records:
-            r['time'] = r[field]
+            r['time'] = r['timestamp']
             q.put(r)
         q.put({})  # end of transmission
 
