@@ -12,7 +12,9 @@ from alpaca_backtrader_api import alpacastore
 
 class MetaAlpacaData(DataBase.__class__):
     def __init__(cls, name, bases, dct):
-        '''Class has already been created ... register'''
+        """
+        Class has already been created ... register
+        """
         # Initialize the class
         super(MetaAlpacaData, cls).__init__(name, bases, dct)
 
@@ -21,7 +23,8 @@ class MetaAlpacaData(DataBase.__class__):
 
 
 class AlpacaData(with_metaclass(MetaAlpacaData, DataBase)):
-    '''Alpaca Data Feed.
+    """
+    Alpaca Data Feed.
 
     Params:
 
@@ -115,7 +118,7 @@ class AlpacaData(with_metaclass(MetaAlpacaData, DataBase)):
         (TimeFrame.Months, 1): 'M',
 
     Any other combination will be rejected
-    '''
+    """
     params = (
         ('qcheck', 0.5),
         ('historical', False),  # do backfilling at the start
@@ -142,8 +145,10 @@ class AlpacaData(with_metaclass(MetaAlpacaData, DataBase)):
         return self._TOFFSET
 
     def islive(self):
-        '''Returns ``True`` to notify ``Cerebro`` that preloading and runonce
-        should be deactivated'''
+        """
+        Returns ``True`` to notify ``Cerebro`` that preloading and runonce
+        should be deactivated
+        """
         return True
 
     def __init__(self, **kwargs):
@@ -152,14 +157,18 @@ class AlpacaData(with_metaclass(MetaAlpacaData, DataBase)):
         self.do_qcheck(True, 0)
 
     def setenvironment(self, env):
-        '''Receives an environment (cerebro) and passes it over to the store it
-        belongs to'''
+        """
+        Receives an environment (cerebro) and passes it over to the store it
+        belongs to
+        """
         super(AlpacaData, self).setenvironment(env)
         env.addstore(self.o)
 
     def start(self):
-        '''Starts the Alpaca connecction and gets the real contract and
-        contractdetails if it exists'''
+        """
+        Starts the Alpaca connecction and gets the real contract and
+        contractdetails if it exists
+        """
         super(AlpacaData, self).start()
 
         # Create attributes as soon as possible
@@ -229,7 +238,9 @@ class AlpacaData(with_metaclass(MetaAlpacaData, DataBase)):
         return True  # no return before - implicit continue
 
     def stop(self):
-        '''Stops and tells the store to stop'''
+        """
+        Stops and tells the store to stop
+        """
         super(AlpacaData, self).stop()
         self.o.stop()
 
