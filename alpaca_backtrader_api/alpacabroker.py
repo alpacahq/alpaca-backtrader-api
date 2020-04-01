@@ -17,21 +17,26 @@ class AlpacaCommInfo(CommInfoBase):
         return abs(size) * price
 
     def getoperationcost(self, size, price):
-        '''Returns the needed amount of cash an operation would cost'''
+        """
+        Returns the needed amount of cash an operation would cost
+        """
         # Same reasoning as above
         return abs(size) * price
 
 
 class MetaAlpacaBroker(BrokerBase.__class__):
     def __init__(cls, name, bases, dct):
-        '''Class has already been created ... register'''
+        """
+        Class has already been created ... register
+        """
         # Initialize the class
         super(MetaAlpacaBroker, cls).__init__(name, bases, dct)
         alpacastore.AlpacaStore.BrokerCls = cls
 
 
 class AlpacaBroker(with_metaclass(MetaAlpacaBroker, BrokerBase)):
-    '''Broker implementation for Alpaca.
+    """
+    Broker implementation for Alpaca.
 
     This class maps the orders/positions from Alpaca to the
     internal API of ``backtrader``.
@@ -43,7 +48,7 @@ class AlpacaBroker(with_metaclass(MetaAlpacaBroker, BrokerBase)):
 
         Set to ``False`` during instantiation to disregard any existing
         position
-    '''
+    """
     params = (
         ('use_positions', True),
     )
