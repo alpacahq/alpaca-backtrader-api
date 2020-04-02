@@ -22,7 +22,7 @@ $ pip3 install alpaca-backtrader-api
 
 #### These examples only work if you have a funded brokerage account or another means of accessing Polygon data.
 
-you can find example strategies in the [samples](/samples) folder. 
+you can find example strategies in the [samples](https://github.com/alpacahq/alpaca-backtrader-api/tree/master/sample) folder. 
 
 remember to add you credentials.
 
