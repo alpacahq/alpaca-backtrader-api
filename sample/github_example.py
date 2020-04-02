@@ -18,8 +18,9 @@ class SmaCross(bt.SignalStrategy):
     self.signal_add(bt.SIGNAL_LONG, crossover)
 
 
-cerebro = bt.Cerebro()
-cerebro.addstrategy(SmaCross)
+if __name__ == '__main__':
+    cerebro = bt.Cerebro()
+    cerebro.addstrategy(SmaCross)
 
 store = alpaca_backtrader_api.AlpacaStore(
     key_id=ALPACA_API_KEY,
