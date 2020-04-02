@@ -65,8 +65,7 @@ class AlpacaBroker(with_metaclass(MetaAlpacaBroker, BrokerBase)):
         self.brackets = dict()  # confirmed brackets
 
         self.startingcash = self.cash = 0.0
-        self.startingvalue = self.value = 0.0
-        self.positions = self.update_positions()
+        self.startingvalue = self.value = 0.0        
         self.addcommissioninfo(self, AlpacaCommInfo(mult=1.0, stocklike=False))
 
 
@@ -97,6 +96,7 @@ class AlpacaBroker(with_metaclass(MetaAlpacaBroker, BrokerBase)):
         self.o.start(broker=self)
         self.startingcash = self.cash = self.o.get_cash()
         self.startingvalue = self.value = self.o.get_value()
+        self.positions = self.update_positions()
 
     def data_started(self, data):
         pos = self.getposition(data)
