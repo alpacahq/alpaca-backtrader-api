@@ -68,7 +68,6 @@ class AlpacaBroker(with_metaclass(MetaAlpacaBroker, BrokerBase)):
         self.startingvalue = self.value = 0.0        
         self.addcommissioninfo(self, AlpacaCommInfo(mult=1.0, stocklike=False))
 
-
     def update_positions(self):
         """
         this method syncs the Alpaca real broker positions and the Backtrader
@@ -151,7 +150,9 @@ class AlpacaBroker(with_metaclass(MetaAlpacaBroker, BrokerBase)):
         return cash
 
     def getvalue(self, datas=None):
-        self.value = self.o.get_value()
+        # don't use self.o.get_value(). it takes time for local store to get
+        # update from broker.
+        self.value = self.o.oapi.get_account().portfolio_value
         return self.value
 
     def getposition(self, data, clone=True):
