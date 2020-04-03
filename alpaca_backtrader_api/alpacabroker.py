@@ -4,7 +4,7 @@ from __future__ import (absolute_import, division, print_function,
 import collections
 
 from backtrader import BrokerBase, Order, BuyOrder, SellOrder
-from backtrader.utils.py3 import with_metaclass
+from backtrader.utils.py3 import with_metaclass, iteritems
 from backtrader.comminfo import CommInfoBase
 from backtrader.position import Position
 
@@ -17,21 +17,26 @@ class AlpacaCommInfo(CommInfoBase):
         return abs(size) * price
 
     def getoperationcost(self, size, price):
-        '''Returns the needed amount of cash an operation would cost'''
+        """
+        Returns the needed amount of cash an operation would cost
+        """
         # Same reasoning as above
         return abs(size) * price
 
 
 class MetaAlpacaBroker(BrokerBase.__class__):
     def __init__(cls, name, bases, dct):
-        '''Class has already been created ... register'''
+        """
+        Class has already been created ... register
+        """
         # Initialize the class
         super(MetaAlpacaBroker, cls).__init__(name, bases, dct)
         alpacastore.AlpacaStore.BrokerCls = cls
 
 
 class AlpacaBroker(with_metaclass(MetaAlpacaBroker, BrokerBase)):
-    '''Broker implementation for Alpaca.
+    """
+    Broker implementation for Alpaca.
 
     This class maps the orders/positions from Alpaca to the
     internal API of ``backtrader``.
@@ -43,7 +48,7 @@ class AlpacaBroker(with_metaclass(MetaAlpacaBroker, BrokerBase)):
 
         Set to ``False`` during instantiation to disregard any existing
         position
-    '''
+    """
     params = (
         ('use_positions', True),
     )
@@ -60,9 +65,37 @@ class AlpacaBroker(with_metaclass(MetaAlpacaBroker, BrokerBase)):
         self.brackets = dict()  # confirmed brackets
 
         self.startingcash = self.cash = 0.0
-        self.startingvalue = self.value = 0.0
-        self.positions = collections.defaultdict(Position)
+        self.startingvalue = self.value = 0.0        
         self.addcommissioninfo(self, AlpacaCommInfo(mult=1.0, stocklike=False))
+
+    def update_positions(self):
+        """
+        this method syncs the Alpaca real broker positions and the Backtrader
+        broker instance. the positions is defined in BrokerBase (in getposition)
+        and used in bbroker (the backtrader broker instance) with Data as the 
+        key. so we do the same here. we create a defaultdict of Position() with 
+        data as the key.
+        :return: collections.defaultdict ({data: Position})
+        """
+        positions = collections.defaultdict(Position)
+        if self.p.use_positions:
+            broker_positions = self.o.oapi.list_positions()
+            broker_positions_symbols = [p.symbol for p in broker_positions]
+            broker_positions_mapped_by_symbol = \
+                {p.symbol: p for p in broker_positions}
+
+            for name, data in iteritems(self.cerebro.datasbyname):
+                if name in broker_positions_symbols:
+
+                    is_sell = broker_positions_mapped_by_symbol[name].side ==\
+                              'short'
+                    size = broker_positions_mapped_by_symbol[name].qty
+                    if is_sell:
+                        size = -size
+                    positions[data] = Position(
+                        size,
+                        broker_positions_mapped_by_symbol[name].avg_entry_price)
+        return positions
 
     def start(self):
         super(AlpacaBroker, self).start()
@@ -70,17 +103,7 @@ class AlpacaBroker(with_metaclass(MetaAlpacaBroker, BrokerBase)):
         self.o.start(broker=self)
         self.startingcash = self.cash = self.o.get_cash()
         self.startingvalue = self.value = self.o.get_value()
-
-        if self.p.use_positions:
-            for p in self.o.get_positions():
-                # print('position for instrument:', p['symbol'])
-                # print('position for instrument:', p.symbol)
-                is_sell = p.side == 'short'
-                size = float(p.qty)
-                if is_sell:
-                    size = -size
-                price = float(p.avg_entry_price)
-                self.positions[p.symbol] = Position(size, price)
+        self.positions = self.update_positions()
 
     def data_started(self, data):
         pos = self.getposition(data)
@@ -127,12 +150,13 @@ class AlpacaBroker(with_metaclass(MetaAlpacaBroker, BrokerBase)):
         return cash
 
     def getvalue(self, datas=None):
-        self.value = self.o.get_value()
+        # don't use self.o.get_value(). it takes time for local store to get
+        # update from broker.
+        self.value = self.o.oapi.get_account().portfolio_value
         return self.value
 
     def getposition(self, data, clone=True):
-        # return self.o.getposition(data._dataname, clone=clone)
-        pos = self.positions[data._dataname]
+        pos = self.positions[data]
         if clone:
             pos = pos.clone()
 
@@ -318,6 +342,7 @@ class AlpacaBroker(with_metaclass(MetaAlpacaBroker, BrokerBase)):
         return self.o.order_cancel(order)
 
     def notify(self, order):
+        self.positions = self.update_positions()
         self.notifs.append(order.clone())
 
     def get_notification(self):

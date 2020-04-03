@@ -539,43 +539,46 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
 
     def _t_order_create(self):
         while True:
-            msg = self.q_ordercreate.get()
-            if msg is None:
-                break
-
-            oref, okwargs = msg
             try:
-                o = self.oapi.submit_order(**okwargs)
-            except Exception as e:
-                self.put_notification(e)
-                self.broker._reject(oref)
-                return
-            try:
-                oid = o.id
-            except Exception:
-                if 'code' in o._raw:
-                    self.put_notification(o.message)
-                else:
-                    self.put_notification(
-                        "General error from the Alpaca server")
-                self.broker._reject(oref)
-                return
-
-            self._orders[oref] = oid
-            self.broker._submit(oref)
-            if okwargs['type'] == 'market':
-                self.broker._accept(oref)  # taken immediately
-
-            self._ordersrev[oid] = oref  # maps ids to backtrader order
-
-            # An transaction may have happened and was stored
-            tpending = self._transpend[oid]
-            tpending.append(None)  # eom marker
-            while True:
-                trans = tpending.popleft()
-                if trans is None:
+                msg = self.q_ordercreate.get()
+                if msg is None:
                     break
-                self._process_transaction(oid, trans.order)
+
+                oref, okwargs = msg
+                try:
+                    o = self.oapi.submit_order(**okwargs)
+                except Exception as e:
+                    self.put_notification(e)
+                    self.broker._reject(oref)
+                    return
+                try:
+                    oid = o.id
+                except Exception:
+                    if 'code' in o._raw:
+                        self.put_notification(o.message)
+                    else:
+                        self.put_notification(
+                            "General error from the Alpaca server")
+                    self.broker._reject(oref)
+                    return
+
+                self._orders[oref] = oid
+                self.broker._submit(oref)
+                if okwargs['type'] == 'market':
+                    self.broker._accept(oref)  # taken immediately
+
+                self._ordersrev[oid] = oref  # maps ids to backtrader order
+
+                # An transaction may have happened and was stored
+                tpending = self._transpend[oid]
+                tpending.append(None)  # eom marker
+                while True:
+                    trans = tpending.popleft()
+                    if trans is None:
+                        break
+                    self._process_transaction(oid, trans.order)
+            except Exception as e:
+                print(str(e))
 
     def order_cancel(self, order):
         self.q_orderclose.put(order.ref)
