@@ -19,7 +19,16 @@ $ pip3 install alpaca-backtrader-api
 ```
 
 ## Example
-#### This example only works if you have a funded brokerage account or another means of accessing Polygon data.
+
+#### These examples only work if you have a funded brokerage account or another means of accessing Polygon data.
+
+you can find example strategies in the [samples](https://github.com/alpacahq/alpaca-backtrader-api/tree/master/sample) folder. 
+
+remember to add you credentials.
+
+you can toggle between backtesting and paper trading by changing `ALPACA_PAPER`
+
+#### a strategy looks like this:
 
 In order to call Alpaca's trade API, you need to obtain API key pairs.
 Replace <key_id> and <secret_key> with what you get from the web console.
