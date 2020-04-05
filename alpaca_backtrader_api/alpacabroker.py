@@ -65,15 +65,15 @@ class AlpacaBroker(with_metaclass(MetaAlpacaBroker, BrokerBase)):
         self.brackets = dict()  # confirmed brackets
 
         self.startingcash = self.cash = 0.0
-        self.startingvalue = self.value = 0.0        
+        self.startingvalue = self.value = 0.0
         self.addcommissioninfo(self, AlpacaCommInfo(mult=1.0, stocklike=False))
 
     def update_positions(self):
         """
         this method syncs the Alpaca real broker positions and the Backtrader
-        broker instance. the positions is defined in BrokerBase (in getposition)
-        and used in bbroker (the backtrader broker instance) with Data as the 
-        key. so we do the same here. we create a defaultdict of Position() with 
+        broker instance. the positions is defined in BrokerBase(in getposition)
+        and used in bbroker (the backtrader broker instance) with Data as the
+        key. so we do the same here. we create a defaultdict of Position() with
         data as the key.
         :return: collections.defaultdict ({data: Position})
         """
@@ -94,7 +94,8 @@ class AlpacaBroker(with_metaclass(MetaAlpacaBroker, BrokerBase)):
                         size = -size
                     positions[data] = Position(
                         size,
-                        broker_positions_mapped_by_symbol[name].avg_entry_price)
+                        broker_positions_mapped_by_symbol[name].avg_entry_price
+                    )
         return positions
 
     def start(self):
