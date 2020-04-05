@@ -22,26 +22,27 @@ if __name__ == '__main__':
     cerebro = bt.Cerebro()
     cerebro.addstrategy(SmaCross)
 
-store = alpaca_backtrader_api.AlpacaStore(
-    key_id=ALPACA_API_KEY,
-    secret_key=ALPACA_SECRET_KEY,
-    paper=True
-)
+    store = alpaca_backtrader_api.AlpacaStore(
+        key_id=ALPACA_API_KEY,
+        secret_key=ALPACA_SECRET_KEY,
+        paper=True
+    )
 
-DataFactory = store.getdata  # or use alpaca_backtrader_api.AlpacaData
-if ALPACA_PAPER:
-    data0 = DataFactory(dataname='AAPL',
-                        historical=False,
-                        timeframe=bt.TimeFrame.Days)
+    DataFactory = store.getdata  # or use alpaca_backtrader_api.AlpacaData
+    if ALPACA_PAPER:
+        data0 = DataFactory(dataname='AAPL',
+                            historical=False,
+                            timeframe=bt.TimeFrame.Days)
+        cerebro.adddata(data0)
+        # or just alpaca_backtrader_api.AlpacaBroker()
+        broker = store.getbroker()
+        cerebro.setbroker(broker)
+    else:
+        data0 = DataFactory(dataname='AAPL', historical=True, fromdate=datetime(
+            2015, 1, 1), timeframe=bt.TimeFrame.Days)
     cerebro.adddata(data0)
-    broker = store.getbroker()  # or just alpaca_backtrader_api.AlpacaBroker()
-    cerebro.setbroker(broker)
-else:
-    data0 = DataFactory(dataname='AAPL', historical=True, fromdate=datetime(
-        2015, 1, 1), timeframe=bt.TimeFrame.Days)
-cerebro.adddata(data0)
 
-print('Starting Portfolio Value: %.2f' % cerebro.broker.getvalue())
-cerebro.run()
-print('Final Portfolio Value: %.2f' % cerebro.broker.getvalue())
-cerebro.plot()
+    print('Starting Portfolio Value: %.2f' % cerebro.broker.getvalue())
+    cerebro.run()
+    print('Final Portfolio Value: %.2f' % cerebro.broker.getvalue())
+    cerebro.plot()
