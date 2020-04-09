@@ -89,12 +89,13 @@ class AlpacaBroker(with_metaclass(MetaAlpacaBroker, BrokerBase)):
 
                     is_sell = broker_positions_mapped_by_symbol[name].side ==\
                               'short'
-                    size = broker_positions_mapped_by_symbol[name].qty
+                    size = int(broker_positions_mapped_by_symbol[name].qty)
                     if is_sell:
                         size = -size
                     positions[data] = Position(
                         size,
-                        broker_positions_mapped_by_symbol[name].avg_entry_price
+                        float(broker_positions_mapped_by_symbol[
+                            name].avg_entry_price)
                     )
         return positions
 
@@ -153,7 +154,7 @@ class AlpacaBroker(with_metaclass(MetaAlpacaBroker, BrokerBase)):
     def getvalue(self, datas=None):
         # don't use self.o.get_value(). it takes time for local store to get
         # update from broker.
-        self.value = self.o.oapi.get_account().portfolio_value
+        self.value = float(self.o.oapi.get_account().portfolio_value)
         return self.value
 
     def getposition(self, data, clone=True):
