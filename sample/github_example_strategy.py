@@ -42,7 +42,7 @@ if __name__ == '__main__':
             2015, 1, 1), timeframe=bt.TimeFrame.Days)
     cerebro.adddata(data0)
 
-    print('Starting Portfolio Value: %.2f' % cerebro.broker.getvalue())
+    print('Starting Portfolio Value: {}'.format(cerebro.broker.getvalue()))
     cerebro.run()
-    print('Final Portfolio Value: %.2f' % cerebro.broker.getvalue())
+    print('Final Portfolio Value: {}'.format(cerebro.broker.getvalue()))
     cerebro.plot()
