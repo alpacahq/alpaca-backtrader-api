@@ -78,7 +78,7 @@ if __name__ == '__main__':
         # backtrader broker set initial simulated cash
         cerebro.broker.setcash(100000.0)
 
-    print('Starting Portfolio Value: %.2f' % cerebro.broker.getvalue())
+    print('Starting Portfolio Value: {}'.format(cerebro.broker.getvalue()))
     cerebro.run()
-    print('Final Portfolio Value: %.2f' % cerebro.broker.getvalue())
+    print('Final Portfolio Value: {}'.format(cerebro.broker.getvalue()))
     cerebro.plot()
