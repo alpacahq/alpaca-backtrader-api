@@ -78,7 +78,7 @@ class API(tradeapi.REST):
         return None
 
 
-class Streamer():
+class Streamer:
     conn = None
 
     def __init__(
@@ -91,6 +91,11 @@ class Streamer():
             base_url='',
             *args,
             **kwargs):
+        try:
+            # make sure we have an event loop, if not create a new one
+            asyncio.get_event_loop()
+        except RuntimeError:
+            asyncio.set_event_loop(asyncio.new_event_loop())
         self.conn = tradeapi.StreamConn(api_key, api_secret, base_url)
         self.instrument = instrument
         self.method = method
