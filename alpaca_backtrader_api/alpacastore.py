@@ -608,7 +608,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                     trans = tpending.popleft()
                     if trans is None:
                         break
-                    self._process_transaction(oid, trans.order)
+                    self._process_transaction(oid, trans)
             except Exception as e:
                 print(str(e))
 
