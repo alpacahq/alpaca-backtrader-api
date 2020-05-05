@@ -166,7 +166,7 @@ class AlpacaData(with_metaclass(MetaAlpacaData, DataBase)):
 
     def start(self):
         """
-        Starts the Alpaca connecction and gets the real contract and
+        Starts the Alpaca connection and gets the real contract and
         contractdetails if it exists
         """
         super(AlpacaData, self).start()
