@@ -86,12 +86,7 @@ class AlpacaBroker(with_metaclass(MetaAlpacaBroker, BrokerBase)):
 
             for name, data in iteritems(self.cerebro.datasbyname):
                 if name in broker_positions_symbols:
-
-                    is_sell = broker_positions_mapped_by_symbol[name].side ==\
-                              'short'
                     size = int(broker_positions_mapped_by_symbol[name].qty)
-                    if is_sell:
-                        size = -size
                     positions[data] = Position(
                         size,
                         float(broker_positions_mapped_by_symbol[
