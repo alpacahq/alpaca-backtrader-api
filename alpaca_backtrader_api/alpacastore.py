@@ -58,11 +58,17 @@ class AlpacaNetworkError(AlpacaError):
 
 class API(tradeapi.REST):
 
-    def _request(self, method, path, data=None):
+    def _request(self,
+                 method,
+                 path,
+                 data=None,
+                 base_url=None,
+                 api_version=None):
 
         # Added the try block
         try:
-            return super(API, self)._request(method, path, data)
+            return super(API, self)._request(
+                method, path, data, base_url, api_version)
         except requests.RequestException as e:
             resp = AlpacaRequestError().error_response
             resp['description'] = str(e)
@@ -89,6 +95,7 @@ class Streamer:
             instrument='',
             method='',
             base_url='',
+            data_stream='',
             *args,
             **kwargs):
         try:
@@ -96,7 +103,11 @@ class Streamer:
             asyncio.get_event_loop()
         except RuntimeError:
             asyncio.set_event_loop(asyncio.new_event_loop())
-        self.conn = tradeapi.StreamConn(api_key, api_secret, base_url)
+        self.data_stream = data_stream
+        self.conn = tradeapi.StreamConn(api_key,
+                                        api_secret,
+                                        base_url,
+                                        data_stream=self.data_stream)
         self.instrument = instrument
         self.method = method
         self.q = q
@@ -110,7 +121,10 @@ class Streamer:
         if not self.method:
             channels = ['trade_updates']  # 'account_updates'
         else:
-            maps = {"quote": "Q."}
+            if self.data_stream == 'polygon':
+                maps = {"quote": "Q."}
+            elif self.data_stream == 'alpacadatav1':
+                maps = {"quote": "alpacadatav1/Q."}
             channels = [maps[self.method] + self.instrument]
 
         loop = asyncio.new_event_loop()
@@ -177,6 +191,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
         ('key_id', ''),
         ('secret_key', ''),
         ('paper', False),
+        ('usePolygon', False),
         ('account_tmout', 10.0),  # account balance refresh timeout
         ('api_version', None)
     )
@@ -318,7 +333,10 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
         streamer = Streamer(q,
                             api_key=self.p.key_id,
                             api_secret=self.p.secret_key,
-                            base_url=self.p.base_url)
+                            base_url=self.p.base_url,
+                            data_stream='polygon' if self.p.usePolygon else
+                            'alpacadatav1'
+                            )
 
         streamer.run()
 
@@ -384,13 +402,20 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                 start_dt = None
                 if dtkwargs['start']:
                     start_dt = dtkwargs['start'].isoformat()
-                response = \
-                    self.oapi.polygon.historic_agg_v2(
-                        dataname,
-                        compression,
-                        granularity,
-                        _from=self.iso_date(start_dt),
-                        to=self.iso_date(end_dt))
+                if self.p.usePolygon:
+                    response = \
+                        self.oapi.polygon.historic_agg_v2(
+                            dataname,
+                            compression,
+                            granularity,
+                            _from=self.iso_date(start_dt),
+                            to=self.iso_date(end_dt))
+                else:
+                    response = self.oapi.get_aggs(dataname,
+                                                  compression,
+                                                  granularity,
+                                                  self.iso_date(start_dt),
+                                                  self.iso_date(end_dt))
             except AlpacaError as e:
                 print(str(e))
                 q.put(e.error_response)
@@ -451,7 +476,9 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                             api_secret=self.p.secret_key,
                             instrument=dataname,
                             method='quote',
-                            base_url=self.p.base_url)
+                            base_url=self.p.base_url,
+                            data_stream='polygon' if self.p.usePolygon else
+                            'alpacadatav1')
 
         streamer.run()
 
@@ -581,7 +608,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                     trans = tpending.popleft()
                     if trans is None:
                         break
-                    self._process_transaction(oid, trans.order)
+                    self._process_transaction(oid, trans)
             except Exception as e:
                 print(str(e))
 

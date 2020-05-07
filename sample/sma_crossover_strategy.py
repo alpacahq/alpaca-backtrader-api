@@ -58,7 +58,8 @@ if __name__ == '__main__':
     store = alpaca_backtrader_api.AlpacaStore(
         key_id=ALPACA_API_KEY,
         secret_key=ALPACA_SECRET_KEY,
-        paper=True
+        paper=True,
+        usePolygon=False
     )
 
     DataFactory = store.getdata  # or use alpaca_backtrader_api.AlpacaData
