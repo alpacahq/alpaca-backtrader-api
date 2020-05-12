@@ -70,7 +70,7 @@ class AlpacaBroker(with_metaclass(MetaAlpacaBroker, BrokerBase)):
 
     def update_positions(self):
         """
-        this method syncs the Alpaca real broker positions and the Backtrader
+        This method syncs the Alpaca real broker positions and the Backtrader
         broker instance. the positions is defined in BrokerBase(in getposition)
         and used in bbroker (the backtrader broker instance) with Data as the
         key. so we do the same here. we create a defaultdict of Position() with
