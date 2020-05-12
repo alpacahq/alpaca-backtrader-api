@@ -8,7 +8,6 @@ from alpaca_backtrader_api.streamcon_service import Streamer, get_streamer
 from dateutil.parser import parse as date_parse
 import time as _time
 import threading
-import asyncio
 
 import alpaca_trade_api as tradeapi
 import pytz
@@ -85,8 +84,6 @@ class API(tradeapi.REST):
             return resp
 
         return None
-
-
 
 
 class MetaSingleton(MetaParams):
@@ -177,7 +174,8 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
         Streamer(api_key=self.p.key_id,
                  api_secret=self.p.secret_key,
                  base_url=self.p.base_url,
-                 data_stream='polygon' if self.p.usePolygon else 'alpacadatav1')
+                 data_stream='polygon' if self.p.usePolygon else 'alpacadatav1'
+                 )
 
     def start(self, data=None, broker=None):
         # Datas require some processing to kickstart data reception
@@ -419,7 +417,6 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
         if tmout is not None:
             _time.sleep(tmout)
         get_streamer().subscribe(symbol=dataname, q=q)
-
 
     def get_cash(self):
         return self._cash
