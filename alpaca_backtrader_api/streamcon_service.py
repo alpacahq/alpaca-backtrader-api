@@ -85,8 +85,6 @@ class Streamer:
         self.subscription_queue.put(channels)
 
     # # Setup event handlers
-    # async def on_auth(self, conn, stream, msg):
-    #     pass
     #
     # async def on_listen(self, conn, stream, msg):
     #     pass
@@ -97,8 +95,11 @@ class Streamer:
     # async def on_agg_min(self, conn, subject, msg):
     #     self.q_mapping[msg.symbol].put(msg)
     #
-    # async def on_account(self, conn, stream, msg):
-    #     self.q_mapping[msg.symbol].put(msg)
+    async def on_auth(self, conn, stream, msg):
+        pass
+
+    async def on_account(self, conn, stream, msg):
+        self.q_mapping[msg.symbol].put(msg)
 
     async def on_quotes(self, conn, subject, msg):
         msg._raw['time'] = msg.timestamp.to_pydatetime().timestamp()
