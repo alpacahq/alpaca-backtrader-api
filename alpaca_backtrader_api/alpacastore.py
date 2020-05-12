@@ -3,6 +3,8 @@ from __future__ import (absolute_import, division, print_function,
 
 import collections
 from datetime import datetime, timedelta
+
+from alpaca_backtrader_api.streamcon_service import Streamer, get_streamer
 from dateutil.parser import parse as date_parse
 import time as _time
 import threading
@@ -84,75 +86,6 @@ class API(tradeapi.REST):
         return None
 
 
-class Streamer:
-    conn = None
-
-    def __init__(
-            self,
-            q,
-            api_key='',
-            api_secret='',
-            instrument='',
-            method='',
-            base_url='',
-            data_stream='',
-            *args,
-            **kwargs):
-        try:
-            # make sure we have an event loop, if not create a new one
-            asyncio.get_event_loop()
-        except RuntimeError:
-            asyncio.set_event_loop(asyncio.new_event_loop())
-        self.data_stream = data_stream
-        self.conn = tradeapi.StreamConn(api_key,
-                                        api_secret,
-                                        base_url,
-                                        data_stream=self.data_stream)
-        self.instrument = instrument
-        self.method = method
-        self.q = q
-        self.conn.on('authenticated')(self.on_auth)
-        self.conn.on(r'Q.*')(self.on_quotes)
-        self.conn.on(r'account_updates')(self.on_account)
-        self.conn.on(r'trade_updates')(self.on_trade)
-
-    def run(self):
-        channels = []
-        if not self.method:
-            channels = ['trade_updates']  # 'account_updates'
-        else:
-            if self.data_stream == 'polygon':
-                maps = {"quote": "Q."}
-            elif self.data_stream == 'alpacadatav1':
-                maps = {"quote": "alpacadatav1/Q."}
-            channels = [maps[self.method] + self.instrument]
-
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        self.conn.run(channels)
-
-    # Setup event handlers
-    async def on_auth(self, conn, stream, msg):
-        pass
-
-    async def on_listen(self, conn, stream, msg):
-        pass
-
-    async def on_quotes(self, conn, subject, msg):
-        msg._raw['time'] = msg.timestamp.to_pydatetime().timestamp()
-        self.q.put(msg._raw)
-
-    async def on_agg_sec(self, conn, subject, msg):
-        self.q.put(msg)
-
-    async def on_agg_min(self, conn, subject, msg):
-        self.q.put(msg)
-
-    async def on_account(self, conn, stream, msg):
-        self.q.put(msg)
-
-    async def on_trade(self, conn, stream, msg):
-        self.q.put(msg)
 
 
 class MetaSingleton(MetaParams):
@@ -239,6 +172,11 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
         self._cash = 0.0
         self._value = 0.0
         self._evt_acct = threading.Event()
+
+        Streamer(api_key=self.p.key_id,
+                 api_secret=self.p.secret_key,
+                 base_url=self.p.base_url,
+                 data_stream='polygon' if self.p.usePolygon else 'alpacadatav1')
 
     def start(self, data=None, broker=None):
         # Datas require some processing to kickstart data reception
@@ -330,15 +268,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
     def _t_streaming_events(self, q, tmout=None):
         if tmout is not None:
             _time.sleep(tmout)
-        streamer = Streamer(q,
-                            api_key=self.p.key_id,
-                            api_secret=self.p.secret_key,
-                            base_url=self.p.base_url,
-                            data_stream='polygon' if self.p.usePolygon else
-                            'alpacadatav1'
-                            )
-
-        streamer.run()
+        get_streamer().subscribe(q=q)
 
     def candles(self, dataname, dtbegin, dtend, timeframe, compression,
                 candleFormat, includeFirst):
@@ -471,16 +401,8 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
     def _t_streaming_prices(self, dataname, q, tmout):
         if tmout is not None:
             _time.sleep(tmout)
-        streamer = Streamer(q,
-                            api_key=self.p.key_id,
-                            api_secret=self.p.secret_key,
-                            instrument=dataname,
-                            method='quote',
-                            base_url=self.p.base_url,
-                            data_stream='polygon' if self.p.usePolygon else
-                            'alpacadatav1')
+        get_streamer().subscribe(symbol=dataname, q=q)
 
-        streamer.run()
 
     def get_cash(self):
         return self._cash
