@@ -26,7 +26,7 @@ setup(
     packages=['alpaca_backtrader_api'],
     install_requires=[
         'backtrader',
-        'alpaca-trade-api==0.47rc5',
+        'alpaca-trade-api==0.48',
     ],
     tests_require=[
         'pytest',
