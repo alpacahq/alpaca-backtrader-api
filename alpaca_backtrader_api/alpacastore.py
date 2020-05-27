@@ -567,7 +567,6 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
         if stopside or takeside:
             okwargs['order_class'] = "bracket"
 
-
         okwargs.update(**kwargs)  # anything from the user
 
         self.q_ordercreate.put((order.ref, okwargs,))
