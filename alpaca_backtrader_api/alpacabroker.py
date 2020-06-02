@@ -147,10 +147,26 @@ class AlpacaBroker(with_metaclass(MetaAlpacaBroker, BrokerBase)):
         return cash
 
     def getvalue(self, datas=None):
-        # don't use self.o.get_value(). it takes time for local store to get
-        # update from broker.
-        self.value = float(self.o.oapi.get_account().portfolio_value)
-        return self.value
+        """
+        if datas then we will calculate the value of the positions if not
+        then the value of the entire portfolio (positions + cash)
+        :param datas: list of data objects
+        :return: float
+        """
+        if not datas:
+            # don't use self.o.get_value(). it takes time for local store to
+            # get update from broker.
+            self.value = float(self.o.oapi.get_account().portfolio_value)
+            return self.value
+        else:
+            # let's calculate the value of the positions
+            total_value = 0
+            for d in datas:
+                pos = self.getposition(d)
+                if pos.size:
+                    price = list(d)[0]
+                    total_value += price * pos.size
+            return total_value
 
     def getposition(self, data, clone=True):
         pos = self.positions[data]
