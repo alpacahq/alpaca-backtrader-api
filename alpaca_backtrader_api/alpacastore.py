@@ -325,7 +325,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
     def _t_streaming_listener(self, q, tmout=None):
         while True:
             trans = q.get()
-            self._transaction(trans)
+            self._transaction(trans.order)
 
     def _t_streaming_events(self, q, tmout=None):
         if tmout is not None:
