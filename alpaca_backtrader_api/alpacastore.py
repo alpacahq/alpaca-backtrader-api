@@ -576,8 +576,8 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
     def _t_order_create(self):
         while True:
             try:
-                # if self.q_ordercreate.empty():
-                #     continue
+                if self.q_ordercreate.empty():
+                    continue
                 msg = self.q_ordercreate.get()
                 if msg is None:
                     break
@@ -588,7 +588,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                 except Exception as e:
                     self.put_notification(e)
                     self.broker._reject(oref)
-                    return
+                    continue
                 try:
                     oid = o.id
                 except Exception:
@@ -598,7 +598,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                         self.put_notification(
                             "General error from the Alpaca server")
                     self.broker._reject(oref)
-                    return
+                    continue
 
                 self._orders[oref] = oid
                 self.broker._submit(oref)
@@ -652,7 +652,8 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
         # Invoked from Streaming Events. May actually receive an event for an
         # oid which has not yet been returned after creating an order. Hence
         # store if not yet seen, else forward to processer
-
+        if not 'id' in trans:
+            return
         oid = trans['id']
 
         if not self._ordersrev.get(oid, False):
