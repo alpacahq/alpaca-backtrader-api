@@ -544,7 +544,8 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
     def order_create(self, order, stopside=None, takeside=None, **kwargs):
         okwargs = dict()
         # different data feeds may set _name or _dataname so we cover both
-        okwargs['symbol'] = order.data._name if order.data._name else order.data._dataname
+        okwargs['symbol'] = order.data._name if order.data._name else \
+            order.data._dataname
         okwargs['qty'] = abs(int(order.created.size))
         okwargs['side'] = 'buy' if order.isbuy() else 'sell'
         okwargs['type'] = self._ORDEREXECS[order.exectype]
