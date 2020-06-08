@@ -462,7 +462,9 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
 
     def order_create(self, order, stopside=None, takeside=None, **kwargs):
         okwargs = dict()
-        okwargs['symbol'] = order.data._dataname
+        # different data feeds may set _name or _dataname so we cover both
+        okwargs['symbol'] = order.data._name if order.data._name else \
+            order.data._dataname
         okwargs['qty'] = abs(int(order.created.size))
         okwargs['side'] = 'buy' if order.isbuy() else 'sell'
         okwargs['type'] = self._ORDEREXECS[order.exectype]
@@ -477,11 +479,14 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
         # if order.exectype == bt.Order.StopTrail:
         #     okwargs['trailingStop'] = order.trailamount
 
-        # if stopside is not None:
-        #     okwargs['stopLoss'] = stopside.price
+        if stopside:
+            okwargs['stop_loss'] = {'stop_price': stopside.price}
 
-        # if takeside is not None:
-        #     okwargs['takeProfit'] = takeside.price
+        if takeside:
+            okwargs['take_profit'] = {'limit_price': takeside.price}
+
+        if stopside or takeside:
+            okwargs['order_class'] = "bracket"
 
         okwargs.update(**kwargs)  # anything from the user
 
@@ -491,6 +496,8 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
     def _t_order_create(self):
         while True:
             try:
+                # if self.q_ordercreate.empty():
+                #     continue
                 msg = self.q_ordercreate.get()
                 if msg is None:
                     break
