@@ -1,4 +1,5 @@
 [![PyPI version](https://badge.fury.io/py/alpaca-backtrader-api.svg)](https://badge.fury.io/py/alpaca-backtrader-api)
+[![PyPI download month](https://img.shields.io/pypi/dm/alpaca-backtrader-api.svg)](https://pypi.python.org/pypi/alpaca-backtrader-api/)
 [![CircleCI](https://circleci.com/gh/alpacahq/alpaca-backtrader-api.svg?style=shield)](https://circleci.com/gh/alpacahq/alpaca-backtrader-api)
 
 # alpaca-backtrader-api
