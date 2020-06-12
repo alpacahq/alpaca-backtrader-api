@@ -425,10 +425,10 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                                                     granularity,
                                                     start=start_dt,
                                                     end=end_dt)[dataname]._raw
-                    for l in response:
+                    for bar in response:
                         # Aggs are in milliseconds, we multiply by 1000 to
                         # change seconds to ms
-                        l['t'] *= 1000
+                        bar['t'] *= 1000
                     response = Aggs({"results": response})
             except AlpacaError as e:
                 print(str(e))

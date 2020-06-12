@@ -14,7 +14,7 @@ class TestStrategy(bt.Strategy):
     params = dict(
         smaperiod=5,
         trade=False,
-        stake=10,
+        stake=1,
         exectype=bt.Order.Market,
         stopafter=0,
         valid=None,
