@@ -15,6 +15,7 @@ import requests
 import pandas as pd
 
 import backtrader as bt
+from alpaca_trade_api.entity import Aggs
 from alpaca_trade_api.polygon.entity import NY
 from backtrader.metabase import MetaParams
 from backtrader.utils.py3 import queue, with_metaclass
@@ -339,11 +340,24 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                             _from=self.iso_date(start_dt),
                             to=self.iso_date(end_dt))
                 else:
-                    response = self.oapi.get_aggs(dataname,
-                                                  compression,
-                                                  granularity,
-                                                  self.iso_date(start_dt),
-                                                  self.iso_date(end_dt))
+                    # response = self.oapi.get_aggs(dataname,
+                    #                               compression,
+                    #                               granularity,
+                    #                               self.iso_date(start_dt),
+                    #                               self.iso_date(end_dt))
+                    # so get_aggs work nicely for days but not for minutes, and
+                    # it is not a documented API. barset on the other hand does
+                    # but we need to manipulate it to be able to work with it
+                    # smootly
+                    response = self.oapi.get_barset(dataname,
+                                                    granularity,
+                                                    start=start_dt,
+                                                    end=end_dt)[dataname]._raw
+                    for bar in response:
+                        # Aggs are in milliseconds, we multiply by 1000 to
+                        # change seconds to ms
+                        bar['t'] *= 1000
+                    response = Aggs({"results": response})
             except AlpacaError as e:
                 print(str(e))
                 q.put(e.error_response)

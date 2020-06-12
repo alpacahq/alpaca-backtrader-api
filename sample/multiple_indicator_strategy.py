@@ -3,8 +3,11 @@ import backtrader as bt
 from datetime import datetime
 
 # Your credentials here
-ALPACA_API_KEY = "<key_id>"
-ALPACA_SECRET_KEY = "<secret_key>"
+# ALPACA_API_KEY = "<key_id>"
+# ALPACA_SECRET_KEY = "<secret_key>"
+ALPACA_API_KEY = "PKRYEUB4K6RVNTZSFKFT"
+ALPACA_SECRET_KEY = "at6gv6MdJsLWlmTFu5khrL3vZZ8OG8GVKW4NQlMB"
+USE_POLYGON = True
 # change to True if you want to do live paper trading with Alpaca Broker.
 #  False will do a back test
 ALPACA_PAPER = False
@@ -73,7 +76,7 @@ if __name__ == '__main__':
         key_id=ALPACA_API_KEY,
         secret_key=ALPACA_SECRET_KEY,
         paper=True,
-        usePolygon=False
+        usePolygon=USE_POLYGON
     )
 
     DataFactory = store.getdata  # or use alpaca_backtrader_api.AlpacaData
