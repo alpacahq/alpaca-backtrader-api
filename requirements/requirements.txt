@@ -1,0 +1,2 @@
+backtrader
+alpaca-trade-api==0.48
