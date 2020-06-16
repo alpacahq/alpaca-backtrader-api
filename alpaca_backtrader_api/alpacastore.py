@@ -420,11 +420,12 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                     # so get_aggs work nicely for days but not for minutes, and
                     # it is not a documented API. barset on the other hand does
                     # but we need to manipulate it to be able to work with it
-                    # smootly
-                    response = self.oapi.get_barset(dataname,
-                                                    granularity,
-                                                    start=start_dt,
-                                                    end=end_dt)[dataname]._raw
+                    # smoothly and return data the same way polygon does
+                    response = self.oapi.get_barset(
+                        dataname,
+                        granularity,
+                        start=start_dt,
+                        end=end_dt)[dataname]._raw
                     for bar in response:
                         # Aggs are in milliseconds, we multiply by 1000 to
                         # change seconds to ms
@@ -680,6 +681,13 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
         try:
             oref = self._ordersrev.pop(oid)
         except KeyError:
+            # when updating the account outside of the scope of this instance,
+            # there's no order object for that transaction(e.g fill order in
+            # the web app. by doing this hack, we will make sure the positions
+            # are updated, even if we don't have an order object
+            from alpaca_backtrader_api import AlpacaBroker
+            if isinstance(self.broker, AlpacaBroker):
+                self.broker.positions = self.broker.update_positions()
             return
 
         ttype = trans['status']
