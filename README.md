@@ -1,5 +1,7 @@
 [![PyPI version](https://badge.fury.io/py/alpaca-backtrader-api.svg)](https://badge.fury.io/py/alpaca-backtrader-api)
 [![CircleCI](https://circleci.com/gh/alpacahq/alpaca-backtrader-api.svg?style=shield)](https://circleci.com/gh/alpacahq/alpaca-backtrader-api)
+[![Updates](https://pyup.io/repos/github/alpacahq/alpaca-backtrader-api/shield.svg)](https://pyup.io/repos/github/alpacahq/alpaca-backtrader-api/)
+[![Python 3](https://pyup.io/repos/github/alpacahq/alpaca-backtrader-api/python-3-shield.svg)](https://pyup.io/repos/github/alpacahq/alpaca-backtrader-api/)
 
 # alpaca-backtrader-api
 

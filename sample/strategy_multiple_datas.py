@@ -3,21 +3,11 @@ import backtrader as bt
 from datetime import datetime
 
 # Your credentials here
-# ALPACA_API_KEY = "<key_id>"
-# ALPACA_SECRET_KEY = "<secret_key>"
-
-## mine:
-ALPACA_API_KEY = "PKEOFXUJRINEGO0YP3CD"
-ALPACA_SECRET_KEY = "GGqP1hHwgSWijNk0dh4NRbAt9nD1bCeaV3OZH1LE"
-USE_POLYGON = False
-
-# ALPACA_API_KEY = "PKRYEUB4K6RVNTZSFKFT"
-# ALPACA_SECRET_KEY = "at6gv6MdJsLWlmTFu5khrL3vZZ8OG8GVKW4NQlMB"
-# USE_POLYGON = True
-
+ALPACA_API_KEY = "<key_id>"
+ALPACA_SECRET_KEY = "<secret_key>"
 # change to True if you want to do live paper trading with Alpaca Broker.
 #  False will do a back test
-ALPACA_PAPER = True
+ALPACA_PAPER = False
 
 
 class SmaCross1(bt.Strategy):
@@ -54,6 +44,8 @@ class SmaCross1(bt.Strategy):
         sma1 = bt.ind.SMA(self.data1, period=self.p.pfast)
         sma2 = bt.ind.SMA(self.data1, period=self.p.pslow)
         self.crossover1 = bt.ind.CrossOver(sma1, sma2)
+
+
 
     def next(self):
         # if fast crosses slow to the upside

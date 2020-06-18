@@ -3,11 +3,8 @@ import backtrader as bt
 from datetime import datetime
 
 # Your credentials here
-# ALPACA_API_KEY = "<key_id>"
-# ALPACA_SECRET_KEY = "<secret_key>"
-ALPACA_API_KEY = "PKRYEUB4K6RVNTZSFKFT"
-ALPACA_SECRET_KEY = "at6gv6MdJsLWlmTFu5khrL3vZZ8OG8GVKW4NQlMB"
-USE_POLYGON = True
+ALPACA_API_KEY = "<key_id>"
+ALPACA_SECRET_KEY = "<secret_key>"
 # change to True if you want to do live paper trading with Alpaca Broker.
 #  False will do a back test
 ALPACA_PAPER = False
@@ -17,12 +14,7 @@ class SmaCross1(bt.Strategy):
     # list of parameters which are configurable for the strategy
     params = dict(
         pfast=10,  # period for the fast moving average
-        pslow=30,   # period for the slow moving average
-        rsi_per=14,
-        rsi_upper=65.0,
-        rsi_lower=35.0,
-        rsi_out=50.0,
-        warmup=35
+        pslow=30   # period for the slow moving average
     )
 
     def log(self, txt, dt=None):
@@ -47,25 +39,16 @@ class SmaCross1(bt.Strategy):
     def __init__(self):
         sma1 = bt.ind.SMA(self.data0, period=self.p.pfast)
         sma2 = bt.ind.SMA(self.data0, period=self.p.pslow)
-        self.crossover = bt.ind.CrossOver(sma1, sma2)
-
-        rsi = bt.indicators.RSI(period=self.p.rsi_per,
-                                upperband=self.p.rsi_upper,
-                                lowerband=self.p.rsi_lower)
-
-        self.crossdown = bt.ind.CrossDown(rsi, self.p.rsi_upper)
-        self.crossup = bt.ind.CrossUp(rsi, self.p.rsi_lower)
+        self.crossover0 = bt.ind.CrossOver(sma1, sma2)
 
     def next(self):
         # if fast crosses slow to the upside
-        if not self.positionsbyname["AAPL"].size:
-            if self.crossover > 0 or self.crossup > 0:
-                self.buy(data=data0, size=5)  # enter long
+        if not self.positionsbyname["AAPL"].size and self.crossover0 > 0:
+            self.buy(data=data0, size=5)  # enter long
 
         # in the market & cross to the downside
-        if self.positionsbyname["AAPL"].size:
-            if self.crossover <= 0 or self.crossdown < 0:
-                self.close(data=data0)  # close long position
+        if self.positionsbyname["AAPL"].size and self.crossover0 <= 0:
+            self.close(data=data0)  # close long position
 
 
 if __name__ == '__main__':
