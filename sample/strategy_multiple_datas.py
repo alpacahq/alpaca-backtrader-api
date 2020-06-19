@@ -28,7 +28,7 @@ class SmaCross1(bt.Strategy):
             trade.size))
 
     def notify_order(self, order):
-        pass
+        print(f"Order notification. status{order.getstatusname()}")
 
     def stop(self):
         print('==================================================')
@@ -45,21 +45,19 @@ class SmaCross1(bt.Strategy):
         sma2 = bt.ind.SMA(self.data1, period=self.p.pslow)
         self.crossover1 = bt.ind.CrossOver(sma1, sma2)
 
-
-
     def next(self):
         # if fast crosses slow to the upside
         if not self.positionsbyname["AAPL"].size and self.crossover0 > 0:
             self.buy(data=data0, size=5)  # enter long
 
-        if not self.positionsbyname["GOOG"].size and self.crossover1 > 0:
+        if not self.positionsbyname["AA"].size and self.crossover1 > 0:
             self.buy(data=data1, size=5)  # enter long
 
         # in the market & cross to the downside
         if self.positionsbyname["AAPL"].size and self.crossover0 <= 0:
             self.close(data=data0)  # close long position
         # in the market & cross to the downside
-        if self.positionsbyname["GOOG"].size and self.crossover1 <= 0:
+        if self.positionsbyname["AA"].size and self.crossover1 <= 0:
             self.close(data=data1)  # close long position
 
 
@@ -79,7 +77,7 @@ if __name__ == '__main__':
         data0 = DataFactory(dataname='AAPL',
                             historical=False,
                             timeframe=bt.TimeFrame.Days)
-        data1 = DataFactory(dataname='GOOG',
+        data1 = DataFactory(dataname='AA',
                             historical=False,
                             timeframe=bt.TimeFrame.Days)
         # or just alpaca_backtrader_api.AlpacaBroker()
@@ -88,7 +86,7 @@ if __name__ == '__main__':
     else:
         data0 = DataFactory(dataname='AAPL', historical=True, fromdate=datetime(
             2015, 1, 1), timeframe=bt.TimeFrame.Days)
-        data1 = DataFactory(dataname='GOOG', historical=True, fromdate=datetime(
+        data1 = DataFactory(dataname='AA', historical=True, fromdate=datetime(
             2015, 1, 1), timeframe=bt.TimeFrame.Days)
     cerebro.adddata(data0)
     cerebro.adddata(data1)
