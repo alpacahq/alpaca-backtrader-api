@@ -106,7 +106,8 @@ class Streamer:
         self.q_mapping[msg.symbol].put(msg._raw)
 
     async def on_trade(self, conn, stream, msg):
-        self.q_mapping[msg.symbol].put(msg)
+        if msg.order['symbol'] in self.q_mapping:
+            self.q_mapping[msg.order['symbol']].put(msg.order)
 
 
 STREAMER = None
