@@ -386,6 +386,8 @@ class AlpacaData(with_metaclass(MetaAlpacaData, DataBase)):
                     return False
 
     def _load_tick(self, msg):
+        if "time" not in msg:
+            return False
         dtobj = datetime.utcfromtimestamp(int(msg['time']))
         dt = date2num(dtobj)
         if dt <= self.lines.datetime[-1]:
