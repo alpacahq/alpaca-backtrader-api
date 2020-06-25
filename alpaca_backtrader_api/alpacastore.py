@@ -420,11 +420,12 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                     # so get_aggs work nicely for days but not for minutes, and
                     # it is not a documented API. barset on the other hand does
                     # but we need to manipulate it to be able to work with it
-                    # smootly
-                    response = self.oapi.get_barset(dataname,
-                                                    granularity,
-                                                    start=start_dt,
-                                                    end=end_dt)[dataname]._raw
+                    # smoothly and return data the same way polygon does
+                    response = self.oapi.get_barset(
+                        dataname,
+                        granularity,
+                        start=start_dt,
+                        end=end_dt)[dataname]._raw
                     for bar in response:
                         # Aggs are in milliseconds, we multiply by 1000 to
                         # change seconds to ms
