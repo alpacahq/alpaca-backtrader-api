@@ -603,7 +603,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                 except Exception as e:
                     self.put_notification(e)
                     self.broker._reject(oref)
-                    return
+                    continue
                 try:
                     oid = o.id
                 except Exception:
