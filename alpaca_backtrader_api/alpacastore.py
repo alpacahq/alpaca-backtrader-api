@@ -592,12 +592,11 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
     def _t_order_create(self):
         while True:
             try:
-                # if self.q_ordercreate.empty():
-                #     continue
+                if self.q_ordercreate.empty():
+                    continue
                 msg = self.q_ordercreate.get()
                 if msg is None:
-                    break
-
+                    continue
                 oref, okwargs = msg
                 try:
                     o = self.oapi.submit_order(**okwargs)
@@ -614,7 +613,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                         self.put_notification(
                             "General error from the Alpaca server")
                     self.broker._reject(oref)
-                    return
+                    continue
 
                 self._orders[oref] = oid
                 self.broker._submit(oref)
