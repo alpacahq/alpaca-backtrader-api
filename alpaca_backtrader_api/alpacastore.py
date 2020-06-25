@@ -590,6 +590,16 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
         return order
 
     def _t_order_create(self):
+        def _check_if_transaction_occurred(order_id):
+            # a transaction may have happened and was stored. if so let's
+            # process it
+            tpending = self._transpend[order_id]
+            tpending.append(None)  # eom marker
+            while True:
+                trans = tpending.popleft()
+                if trans is None:
+                    break
+                self._process_transaction(order_id, trans)
         while True:
             try:
                 if self.q_ordercreate.empty():
@@ -615,21 +625,22 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                     self.broker._reject(oref)
                     continue
 
-                self._orders[oref] = oid
-                self.broker._submit(oref)
                 if okwargs['type'] == 'market':
                     self.broker._accept(oref)  # taken immediately
 
+                self._orders[oref] = oid
                 self._ordersrev[oid] = oref  # maps ids to backtrader order
+                _check_if_transaction_occurred(oid)
+                if o.legs:
+                    index = 1
+                    for leg in o.legs:
+                        self._orders[oref + index] = leg.id
+                        self._ordersrev[leg.id] = oref + index
+                        _check_if_transaction_occurred(leg.id)
+                self.broker._submit(oref)  # inside it submits the legs too
+                if okwargs['type'] == 'market':
+                    self.broker._accept(oref)  # taken immediately
 
-                # An transaction may have happened and was stored
-                tpending = self._transpend[oid]
-                tpending.append(None)  # eom marker
-                while True:
-                    trans = tpending.popleft()
-                    if trans is None:
-                        break
-                    self._process_transaction(oid, trans)
             except Exception as e:
                 print(str(e))
 
