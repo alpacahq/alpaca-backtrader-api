@@ -464,9 +464,11 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                                       'low': 'min',
                                       'close': 'last',
                                       'volume': 'sum'})
+        # don't use dt.replace. use localize
+        # (https://stackoverflow.com/a/1592837/2739124)
         cdl = cdl.loc[
-              dtbegin.replace(tzinfo=pytz.timezone(NY)):
-              dtend.replace(tzinfo=pytz.timezone(NY))
+              pytz.timezone(NY).localize(dtbegin):
+              pytz.timezone(NY).localize(dtbegin)
               ].dropna(subset=['high'])
         records = cdl.reset_index().to_dict('records')
         for r in records:
