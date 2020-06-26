@@ -420,11 +420,12 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                     # so get_aggs work nicely for days but not for minutes, and
                     # it is not a documented API. barset on the other hand does
                     # but we need to manipulate it to be able to work with it
-                    # smootly
-                    response = self.oapi.get_barset(dataname,
-                                                    granularity,
-                                                    start=start_dt,
-                                                    end=end_dt)[dataname]._raw
+                    # smoothly and return data the same way polygon does
+                    response = self.oapi.get_barset(
+                        dataname,
+                        granularity,
+                        start=start_dt,
+                        end=end_dt)[dataname]._raw
                     for bar in response:
                         # Aggs are in milliseconds, we multiply by 1000 to
                         # change seconds to ms
@@ -591,21 +592,30 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
         return order
 
     def _t_order_create(self):
+        def _check_if_transaction_occurred(order_id):
+            # a transaction may have happened and was stored. if so let's
+            # process it
+            tpending = self._transpend[order_id]
+            tpending.append(None)  # eom marker
+            while True:
+                trans = tpending.popleft()
+                if trans is None:
+                    break
+                self._process_transaction(order_id, trans)
         while True:
             try:
-                # if self.q_ordercreate.empty():
-                #     continue
+                if self.q_ordercreate.empty():
+                    continue
                 msg = self.q_ordercreate.get()
                 if msg is None:
-                    break
-
+                    continue
                 oref, okwargs = msg
                 try:
                     o = self.oapi.submit_order(**okwargs)
                 except Exception as e:
                     self.put_notification(e)
                     self.broker._reject(oref)
-                    return
+                    continue
                 try:
                     oid = o.id
                 except Exception:
@@ -615,23 +625,24 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                         self.put_notification(
                             "General error from the Alpaca server")
                     self.broker._reject(oref)
-                    return
+                    continue
 
-                self._orders[oref] = oid
-                self.broker._submit(oref)
                 if okwargs['type'] == 'market':
                     self.broker._accept(oref)  # taken immediately
 
+                self._orders[oref] = oid
                 self._ordersrev[oid] = oref  # maps ids to backtrader order
+                _check_if_transaction_occurred(oid)
+                if o.legs:
+                    index = 1
+                    for leg in o.legs:
+                        self._orders[oref + index] = leg.id
+                        self._ordersrev[leg.id] = oref + index
+                        _check_if_transaction_occurred(leg.id)
+                self.broker._submit(oref)  # inside it submits the legs too
+                if okwargs['type'] == 'market':
+                    self.broker._accept(oref)  # taken immediately
 
-                # An transaction may have happened and was stored
-                tpending = self._transpend[oid]
-                tpending.append(None)  # eom marker
-                while True:
-                    trans = tpending.popleft()
-                    if trans is None:
-                        break
-                    self._process_transaction(oid, trans)
             except Exception as e:
                 print(str(e))
 
