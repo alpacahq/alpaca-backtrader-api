@@ -156,6 +156,7 @@ class AlpacaBroker(with_metaclass(MetaAlpacaBroker, BrokerBase)):
         if not datas:
             # don't use self.o.get_value(). it takes time for local store to
             # get update from broker.
+            # self.value = float(self.o.get_value())
             self.value = float(self.o.oapi.get_account().portfolio_value)
             return self.value
         else:
