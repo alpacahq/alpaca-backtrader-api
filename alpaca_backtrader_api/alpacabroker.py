@@ -242,30 +242,6 @@ class AlpacaBroker(with_metaclass(MetaAlpacaBroker, BrokerBase)):
 
     def _fill(self, oref, size, price, ttype, **kwargs):
         order = self.orders[oref]
-
-        if not order.alive():  # can be a bracket
-            pref = getattr(order.parent, 'ref', order.ref)
-            if pref not in self.brackets:
-                msg = ('Order fill received for {}, with price {} and size {} '
-                       'but order is no longer alive and is not a bracket. '
-                       'Unknown situation')
-                msg.format(order.ref, price, size)
-                self.put_notification(msg, order, price, size)
-                return
-
-            # [main, stopside, takeside], neg idx to array are -3, -2, -1
-            if ttype == 'STOP_LOSS_FILLED':
-                order = self.brackets[pref][-2]
-            elif ttype == 'TAKE_PROFIT_FILLED':
-                order = self.brackets[pref][-1]
-            else:
-                msg = ('Order fill received for {}, with price {} and size {} '
-                       'but order is no longer alive and is a bracket. '
-                       'Unknown situation')
-                msg.format(order.ref, price, size)
-                self.put_notification(msg, order, price, size)
-                return
-
         data = order.data
         pos = self.getposition(data, clone=False)
         psize, pprice, opened, closed = pos.update(size, price)
