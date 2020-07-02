@@ -469,7 +469,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
         # (https://stackoverflow.com/a/1592837/2739124)
         cdl = cdl.loc[
               pytz.timezone(NY).localize(dtbegin):
-              pytz.timezone(NY).localize(dtbegin)
+              pytz.timezone(NY).localize(dtend)
               ].dropna(subset=['high'])
         records = cdl.reset_index().to_dict('records')
         for r in records:
