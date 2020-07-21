@@ -379,7 +379,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
 
         granularity = self.get_granularity(timeframe, compression)
         if granularity is None:
-            e = AlpacaTimeFrameError()
+            e = AlpacaTimeFrameError('')
             q.put(e.error_response)
             return
 
