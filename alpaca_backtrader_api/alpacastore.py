@@ -450,27 +450,35 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
             delta = timedelta(days=days)
             dtbegin = dtend - delta
 
-        cdl = pd.DataFrame()
-        segment_start = dtbegin
-        segment_end = segment_start + timedelta(weeks=2) if \
-            dtend - dtbegin >= timedelta(weeks=2) else dtend
-        while segment_end <= dtend:
-            response = self.oapi.polygon.historic_agg_v2(
+        if granularity == 'day':
+            cdl = self.oapi.polygon.historic_agg_v2(
                 dataname,
                 compression,
                 granularity,
-                _from=self.iso_date(segment_start.isoformat()),
-                to=self.iso_date(segment_end.isoformat()))
-            # No result from the server, most likely error
-            if response.df.shape[0] == 0:
-                raise Exception("received empty response")
-            temp = response.df
-            cdl = pd.concat([cdl, temp])
-            cdl = cdl[~cdl.index.duplicated()]
-            segment_start = segment_end
+                _from=self.iso_date(dtbegin.isoformat()),
+                to=self.iso_date(dtend.isoformat())).df
+        else:
+            cdl = pd.DataFrame()
+            segment_start = dtbegin
             segment_end = segment_start + timedelta(weeks=2) if \
                 dtend - dtbegin >= timedelta(weeks=2) else dtend
-        cdl = _clear_out_of_market_hours(cdl)
+            while segment_end <= dtend:
+                response = self.oapi.polygon.historic_agg_v2(
+                    dataname,
+                    compression,
+                    granularity,
+                    _from=self.iso_date(segment_start.isoformat()),
+                    to=self.iso_date(segment_end.isoformat()))
+                # No result from the server, most likely error
+                if response.df.shape[0] == 0:
+                    raise Exception("received empty response")
+                temp = response.df
+                cdl = pd.concat([cdl, temp])
+                cdl = cdl[~cdl.index.duplicated()]
+                segment_start = segment_end
+                segment_end = segment_start + timedelta(weeks=2) if \
+                    dtend - dtbegin >= timedelta(weeks=2) else dtend
+            cdl = _clear_out_of_market_hours(cdl)
         return cdl
 
     def get_aggs_from_alpaca(self,
