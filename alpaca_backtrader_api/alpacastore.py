@@ -609,13 +609,13 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
             bar['t'] *= 1000
         response = Aggs({"results": response})
 
+        cdl = response.df
+        if granularity == 'minute':
+            cdl = _clear_out_of_market_hours(cdl)
+            cdl = _drop_early_samples(cdl)
         if compression != 1:
-            cdl = response.df
-            if granularity == 'minute':
-                cdl = _clear_out_of_market_hours(cdl)
-                cdl = _drop_early_samples(cdl)
             response = _resample(cdl)
-            # response = _back_to_aggs(cdl)
+        # response = _back_to_aggs(cdl)
         else:
             response = response.df
         response = response.dropna()
