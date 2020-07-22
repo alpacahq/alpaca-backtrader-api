@@ -513,13 +513,22 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
             """
             you could get max 1000 samples from the server. if we need more
             than that we need to do several api calls.
+
+            currently the alpaca api supports also 5Min and 15Min so we could
+            optimize server communication time by addressing timeframes
             """
             got_all = False
             curr = end
             response = []
             while not got_all:
+                if granularity == 'minute' and compression == 5:
+                    timeframe = "5Min"
+                elif granularity == 'minute' and compression == 15:
+                    timeframe = "15Min"
+                else:
+                    timeframe = granularity
                 r = self.oapi.get_barset(dataname,
-                                         granularity,
+                                         timeframe,
                                          limit=1000,
                                          end=curr.isoformat()
                                          )[dataname]
@@ -555,6 +564,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
             samples returned with certain window size (1 day, 1 minute) user
             may want to work with different window size (5min)
             """
+
             if granularity == 'minute':
                 sample_size = f"{compression}Min"
             else:
