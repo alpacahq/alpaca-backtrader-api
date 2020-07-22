@@ -488,6 +488,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                              granularity,
                              compression):
         """
+        https://alpaca.markets/docs/api-documentation/api-v2/market-data/bars/
         Alpaca API as a limit of 1000 records per api call. meaning, we need to
         do multiple calls to get all the required data if the date range is
         large.
