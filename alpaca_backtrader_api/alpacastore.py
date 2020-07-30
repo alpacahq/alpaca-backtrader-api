@@ -2,6 +2,7 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 import collections
+import traceback
 from datetime import datetime, timedelta, time as dtime
 from dateutil.parser import parse as date_parse
 import time as _time
@@ -96,6 +97,7 @@ class Streamer:
             instrument='',
             method='',
             base_url='',
+            data_url='',
             data_stream='',
             *args,
             **kwargs):
@@ -376,10 +378,16 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
 
     def _t_candles(self, dataname, dtbegin, dtend, timeframe, compression,
                    candleFormat, includeFirst, q):
-
         granularity = self.get_granularity(timeframe, compression)
+        if not dtend:
+            dtend = datetime.utcnow()
+        if not dtbegin:
+            days = 30 if 'd' in granularity else 3
+            delta = timedelta(days=days)
+            dtbegin = dtend - delta
+
         if granularity is None:
-            e = AlpacaTimeFrameError('')
+            e = AlpacaTimeFrameError('granularity is missing')
             q.put(e.error_response)
             return
         try:
@@ -400,8 +408,8 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
             q.put(e.error_response)
             q.put(None)
             return
-        except Exception as e:
-            print(str(e))
+        except Exception:
+            traceback.print_exc()
             q.put({'code': 'error'})
             q.put(None)
             return
@@ -442,13 +450,6 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
             only interested in samples between 9:30, 16:00 NY time
             """
             return df.between_time("09:30", "16:00")
-
-        if not dtend:
-            dtend = datetime.utcnow()
-        if not dtbegin:
-            days = 30 if 'd' in granularity else 3
-            delta = timedelta(days=days)
-            dtbegin = dtend - delta
 
         if granularity == 'day':
             cdl = self.oapi.polygon.historic_agg_v2(
@@ -532,16 +533,20 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                                          limit=1000,
                                          end=curr.isoformat()
                                          )[dataname]
-                earliest_sample = r[0].t
-                r = r._raw
-                r.extend(response)
-                response = r
-                if earliest_sample <= pytz.timezone(NY).localize(start):
-                    got_all = True
+                if r:
+                    earliest_sample = r[0].t
+                    r = r._raw
+                    r.extend(response)
+                    response = r
+                    if earliest_sample <= pytz.timezone(NY).localize(start):
+                        got_all = True
+                    else:
+                        delta = timedelta(days=1) if granularity == "day" \
+                            else timedelta(minutes=1)
+                        curr = earliest_sample - delta
                 else:
-                    delta = timedelta(days=1) if granularity == "day" else \
-                        timedelta(minutes=1)
-                    curr = earliest_sample - delta
+                    # no more data is available, let's return what we have
+                    break
             return response
 
         def _clear_out_of_market_hours(df):
