@@ -408,7 +408,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
             q.put(e.error_response)
             q.put(None)
             return
-        except Exception as e:
+        except Exception:
             traceback.print_exc()
             q.put({'code': 'error'})
             q.put(None)
