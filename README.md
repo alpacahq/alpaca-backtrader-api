@@ -67,7 +67,7 @@ if not ALPACA_PAPER:
 
 DataFactory = store.getdata  # or use alpaca_backtrader_api.AlpacaData
 data0 = DataFactory(dataname='AAPL', historical=True, fromdate=datetime(
-    2015, 1, 1), timeframe=bt.TimeFrame.Days)
+    2015, 1, 1), todate=datetime.today(), timeframe=bt.TimeFrame.Days)
 cerebro.adddata(data0)
 
 print('Starting Portfolio Value: %.2f' % cerebro.broker.getvalue())
