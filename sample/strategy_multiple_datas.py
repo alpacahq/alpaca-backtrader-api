@@ -87,9 +87,9 @@ if __name__ == '__main__':
         cerebro.setbroker(broker)
     else:
         data0 = DataFactory(dataname='AAPL', historical=True, fromdate=datetime(
-            2015, 1, 1), timeframe=bt.TimeFrame.Days)
+            2015, 1, 1), todate=datetime.today(), timeframe=bt.TimeFrame.Days)
         data1 = DataFactory(dataname='GOOG', historical=True, fromdate=datetime(
-            2015, 1, 1), timeframe=bt.TimeFrame.Days)
+            2015, 1, 1), todate=datetime.today(), timeframe=bt.TimeFrame.Days)
     cerebro.adddata(data0)
     cerebro.adddata(data1)
 
