@@ -502,7 +502,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
             segment_start = dtbegin
             segment_end = segment_start + timedelta(weeks=2) if \
                 dtend - dtbegin >= timedelta(weeks=2) else dtend
-            while segment_end <= dtend:
+            while segment_end <= dtend and dtend not in cdl.index:
                 response = self.oapi.polygon.historic_agg_v2(
                     dataname,
                     compression,
