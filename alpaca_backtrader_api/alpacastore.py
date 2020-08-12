@@ -510,7 +510,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                     _from=self.iso_date(segment_start.isoformat()),
                     to=self.iso_date(segment_end.isoformat()))
                 # No result from the server, most likely error
-                if response.df.shape[0] == 0:
+                if response.df.shape[0] == 0 and cdl.shape[0] == 0:
                     raise Exception("received empty response")
                 temp = response.df
                 cdl = pd.concat([cdl, temp])
