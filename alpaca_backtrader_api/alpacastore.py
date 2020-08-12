@@ -1,11 +1,15 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
+import os
 import collections
+from enum import Enum
 import traceback
+
 from datetime import datetime, timedelta, time as dtime
 from dateutil.parser import parse as date_parse
 import time as _time
+import trading_calendars
 import threading
 import asyncio
 
@@ -16,10 +20,10 @@ import pandas as pd
 
 import backtrader as bt
 from alpaca_trade_api.entity import Aggs
-from alpaca_trade_api.polygon.entity import NY
 from backtrader.metabase import MetaParams
 from backtrader.utils.py3 import queue, with_metaclass
 
+NY = 'America/New_York'
 
 # Extend the exceptions to support extra cases
 class AlpacaError(Exception):
@@ -84,6 +88,10 @@ class API(tradeapi.REST):
             return resp
 
         return None
+
+class Granularity(Enum):
+    Daily = "day"
+    Minute = "minute"
 
 
 class Streamer:
@@ -297,12 +305,11 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
         # poslist = positions.get('positions', [])
         return positions
 
-    def get_granularity(self, timeframe, compression):
+    def get_granularity(self, timeframe, compression) -> Granularity:
         if timeframe == bt.TimeFrame.Minutes:
-            return "minute"
+            return Granularity.Minute
         elif timeframe == bt.TimeFrame.Days:
-            return "day"
-        return None
+            return Granularity.Daily
 
     def get_instrument(self, dataname):
         try:
@@ -378,13 +385,9 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
 
     def _t_candles(self, dataname, dtbegin, dtend, timeframe, compression,
                    candleFormat, includeFirst, q):
-        granularity = self.get_granularity(timeframe, compression)
-        if not dtend:
-            dtend = datetime.utcnow()
-        if not dtbegin:
-            days = 30 if 'd' in granularity else 3
-            delta = timedelta(days=days)
-            dtbegin = dtend - delta
+        granularity: Granularity = self.get_granularity(timeframe, compression)
+        dtbegin, dtend = self._make_sure_dates_are_initialized_properly(
+            dtbegin, dtend, granularity)
 
         if granularity is None:
             e = AlpacaTimeFrameError('granularity is missing')
@@ -395,13 +398,13 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                 cdl = self.get_aggs_from_polygon(dataname,
                                                  dtbegin,
                                                  dtend,
-                                                 granularity,
+                                                 granularity.value,
                                                  compression)
             else:
                 cdl = self.get_aggs_from_alpaca(dataname,
                                                 dtbegin,
                                                 dtend,
-                                                granularity,
+                                                granularity.value,
                                                 compression)
         except AlpacaError as e:
             print(str(e))
@@ -417,14 +420,50 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
         # don't use dt.replace. use localize
         # (https://stackoverflow.com/a/1592837/2739124)
         cdl = cdl.loc[
-              pytz.timezone(NY).localize(dtbegin):
-              pytz.timezone(NY).localize(dtend)
+              pytz.timezone(NY).localize(dtbegin) if
+              not dtbegin.tzname() else dtbegin:
+              pytz.timezone(NY).localize(dtend) if
+              not dtend.tzname() else dtend
               ].dropna(subset=['high'])
         records = cdl.reset_index().to_dict('records')
         for r in records:
             r['time'] = r['timestamp']
             q.put(r)
         q.put({})  # end of transmission
+
+    def _make_sure_dates_are_initialized_properly(self, dtbegin, dtend,
+                                                  granularity):
+        """
+        dates may or may not be specified by the user.
+        when they do, they are probably don't include NY timezome data
+        also, when granularity is minute, we want to make sure we get data when
+        market is opened. so if it doesn't - let's get set end date to be last
+        known minute with opened market.
+        this nethod takes care of all these issues.
+        :param dtbegin:
+        :param dtend:
+        :param granularity:
+        :return:
+        """
+        if not dtend:
+            dtend = pd.Timestamp('now', tz=NY)
+        else:
+            dtend = pd.Timestamp(pytz.timezone(NY).localize(dtend))
+        if granularity == Granularity.Minute:
+            calendar = trading_calendars.get_calendar(name='NYSE')
+            while not calendar.is_open_on_minute(dtend):
+                dtend = dtend.replace(hour=15,
+                                      minute=59,
+                                      second=0,
+                                      microsecond=0)
+                dtend -= timedelta(days=1)
+        if not dtbegin:
+            days = 30 if granularity == Granularity.Daily else 3
+            delta = timedelta(days=days)
+            dtbegin = dtend - delta
+        else:
+            dtbegin = pd.Timestamp(pytz.timezone(NY).localize(dtbegin))
+        return dtbegin, dtend
 
     def get_aggs_from_polygon(self,
                               dataname,
