@@ -1,7 +1,6 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
-import os
 import collections
 from enum import Enum
 import traceback
@@ -24,6 +23,7 @@ from backtrader.metabase import MetaParams
 from backtrader.utils.py3 import queue, with_metaclass
 
 NY = 'America/New_York'
+
 
 # Extend the exceptions to support extra cases
 class AlpacaError(Exception):
@@ -88,6 +88,7 @@ class API(tradeapi.REST):
             return resp
 
         return None
+
 
 class Granularity(Enum):
     Daily = "day"
