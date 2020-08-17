@@ -55,12 +55,12 @@ class SmaCross1(bt.Strategy):
 
     def next(self):
         # if fast crosses slow to the upside
-        if not self.positionsbyname["AAPL"].size:
+        if not self.positionsbyname[SYMBOL].size:
             if self.crossover > 0 or self.crossup > 0:
                 self.buy(data=data0, size=5)  # enter long
 
         # in the market & cross to the downside
-        if self.positionsbyname["AAPL"].size:
+        if self.positionsbyname[SYMBOL].size:
             if self.crossover <= 0 or self.crossdown < 0:
                 self.close(data=data0)  # close long position
 
