@@ -709,6 +709,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
         bt.Order.Limit: 'limit',
         bt.Order.Stop: 'stop',
         bt.Order.StopLimit: 'stop_limit',
+        bt.Order.StopTrail: 'trailing_stop',
     }
 
     def broker_threads(self):
@@ -766,7 +767,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
         okwargs['side'] = 'buy' if order.isbuy() else 'sell'
         okwargs['type'] = self._ORDEREXECS[order.exectype]
         okwargs['time_in_force'] = "gtc"
-        if order.exectype != bt.Order.Market:
+        if order.exectype not in [bt.Order.Market, bt.Order.StopTrail]:
             okwargs['limit_price'] = str(order.created.price)
 
         if order.exectype in [bt.Order.StopLimit, bt.Order.Stop]:
@@ -784,6 +785,18 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
 
         if stopside or takeside:
             okwargs['order_class'] = "bracket"
+
+        if order.exectype == bt.Order.StopTrail:
+            if order.trailpercent and order.trailamount:
+                raise Exception("You can't create trailing stop order with "
+                                "both TrailPrice and TrailPercent. choose one")
+            if order.trailpercent:
+                okwargs['trail_percent'] = order.trailpercent
+            elif order.trailamount:
+                okwargs['trail_price'] = order.trailamount
+            else:
+                raise Exception("You must provide either trailpercent or "
+                                "trailamount when creating StopTrail order")
 
         okwargs.update(**kwargs)  # anything from the user
 
