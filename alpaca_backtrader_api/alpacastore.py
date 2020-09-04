@@ -587,7 +587,8 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                     r = r._raw
                     r.extend(response)
                     response = r
-                    if earliest_sample <= pytz.timezone(NY).localize(start):
+                    if earliest_sample <= (pytz.timezone(NY).localize(start) if
+                    not start.tzname() else start):
                         got_all = True
                     else:
                         delta = timedelta(days=1) if granularity == "day" \
