@@ -5,4 +5,4 @@ from .alpacadata import AlpacaData
 __all__ = [
     'AlpacaStore', 'AlpacaBroker', 'AlpacaData',
 ]
-__version__ = '0.10.0'
+__version__ = '0.10.1'
