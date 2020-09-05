@@ -94,7 +94,7 @@ If you set it to True, then you are in the paper trading mode.
 ## Running Multiple Algorithm/Symbols
 There's a way to execute an algorithm with multiple datas or/and execute more than one algorithm.<br>
 The websocket connection is limited to 1 connection per account. Alpaca backtrader opens a websocket connection for each data you define.<br>
-For that exact purpose this project was created: https://github.com/shlomikushchi/alpaca-proxy-agent<br>
+For that exact purpose this project was created: https://github.com/shlomikushchi/alpaca-proxy-agent <br>
 The steps to execute this are:
 * Run the Alpaca Proxy Agent as described in the project's README
 * Define this env variable: `DATA_PROXY_WS` to be the address of the proxy agent. (e.g: `DATA_PROXY_WS=ws://192.168.99.100:8765`)
