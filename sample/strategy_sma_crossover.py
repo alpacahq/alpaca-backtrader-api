@@ -63,7 +63,7 @@ if __name__ == '__main__':
     )
 
     DataFactory = store.getdata  # or use alpaca_backtrader_api.AlpacaData
-    if ALPACA_PAPER:
+    if not ALPACA_PAPER:
         data0 = DataFactory(dataname='AAPL',
                             historical=False,
                             timeframe=bt.TimeFrame.Days)
@@ -75,7 +75,7 @@ if __name__ == '__main__':
             2015, 1, 1), timeframe=bt.TimeFrame.Days)
     cerebro.adddata(data0)
 
-    if not ALPACA_PAPER:
+    if ALPACA_PAPER:
         # backtrader broker set initial simulated cash
         cerebro.broker.setcash(100000.0)
 
