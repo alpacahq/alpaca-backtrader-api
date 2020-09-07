@@ -1,3 +1,3 @@
 backtrader==1.9.76.123
 alpaca-trade-api==0.50.1
-trading_calendars==1.11.10
+trading_calendars==1.11.11
