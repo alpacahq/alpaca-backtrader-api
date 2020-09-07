@@ -759,7 +759,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
 
             self._evt_acct.set()
 
-    def order_create(self, order, stopside=None, takeside=None, **kwargs):
+    def order_create(self, order, stopside=None, takeside=None, client_order_id=None, **kwargs):
         okwargs = dict()
         # different data feeds may set _name or _dataname so we cover both
         okwargs['symbol'] = order.data._name if order.data._name else \
@@ -786,6 +786,9 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
 
         if stopside or takeside:
             okwargs['order_class'] = "bracket"
+
+        if client_order_id:
+            okwargs['client_order_id'] = client_order_id
 
         if order.exectype == bt.Order.StopTrail:
             if order.trailpercent and order.trailamount:

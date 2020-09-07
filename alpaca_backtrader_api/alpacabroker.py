@@ -266,6 +266,10 @@ class AlpacaBroker(with_metaclass(MetaAlpacaBroker, BrokerBase)):
 
     def _transmit(self, order):
         oref = order.ref
+        if order.info['client_order_id']:
+            client_order_id = order.info['client_order_id']
+        else:
+            client_order_id = None
         pref = getattr(order.parent, 'ref', oref)  # parent ref or self
         if order.transmit:
             if oref != pref:  # children order
@@ -277,12 +281,12 @@ class AlpacaBroker(with_metaclass(MetaAlpacaBroker, BrokerBase)):
                     self.orders[o.ref] = o  # write them down
 
                 self.brackets[pref] = [parent, stopside, takeside]
-                self.o.order_create(parent, stopside, takeside)
+                self.o.order_create(parent, stopside, takeside, client_order_id)
                 return takeside  # parent was already returned
 
             else:  # Parent order, which is not being transmitted
                 self.orders[order.ref] = order
-                return self.o.order_create(order)
+                return self.o.order_create(order, client_order_id)
 
         # Not transmitting
         self.opending[pref].append(order)
