@@ -799,7 +799,9 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                 raise Exception("You must provide either trailpercent or "
                                 "trailamount when creating StopTrail order")
 
-        okwargs.update(**kwargs)  # anything from the user
+        # anything from the user
+        okwargs.update(order.info)
+        okwargs.update(**kwargs)
 
         self.q_ordercreate.put((order.ref, okwargs,))
         return order
