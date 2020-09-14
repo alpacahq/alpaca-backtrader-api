@@ -1,6 +1,6 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
-
+import os
 import collections
 from enum import Enum
 import traceback
@@ -119,6 +119,7 @@ class Streamer:
         self.conn = tradeapi.StreamConn(api_key,
                                         api_secret,
                                         base_url,
+                                        data_url=data_url,
                                         data_stream=self.data_stream)
         self.instrument = instrument
         self.method = method
@@ -345,6 +346,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                             api_key=self.p.key_id,
                             api_secret=self.p.secret_key,
                             base_url=self.p.base_url,
+                            data_url=os.environ.get("DATA_PROXY_WS", ''),
                             data_stream='polygon' if self.p.usePolygon else
                             'alpacadatav1'
                             )
@@ -694,6 +696,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                             instrument=dataname,
                             method='quote',
                             base_url=self.p.base_url,
+                            data_url=os.environ.get("DATA_PROXY_WS", ''),
                             data_stream='polygon' if self.p.usePolygon else
                             'alpacadatav1')
 
