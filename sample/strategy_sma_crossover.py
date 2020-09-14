@@ -51,7 +51,8 @@ class SmaCross1(bt.Strategy):
             trade.size))
 
     def notify_order(self, order):
-        pass
+        print(f"Order notification. status{order.getstatusname()}.")
+        print(f"Order info. status{order.info}.")
 
     def stop(self):
         print('==================================================')
