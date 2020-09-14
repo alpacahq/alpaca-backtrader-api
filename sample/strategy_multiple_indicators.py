@@ -2,13 +2,22 @@ import alpaca_backtrader_api
 import backtrader as bt
 from datetime import datetime
 
+
 # Your credentials here
 ALPACA_API_KEY = "<key_id>"
 ALPACA_SECRET_KEY = "<secret_key>"
-# change to True if you want to do live paper trading with Alpaca Broker.
-#  False will do a back test
+USE_POLYGON = False
+
+"""
+You have 3 options: 
+ - backtest (IS_BACKTEST=True, IS_LIVE=False)
+ - paper trade (IS_BACKTEST=False, IS_LIVE=False) 
+ - live trade (IS_BACKTEST=False, IS_LIVE=True) 
+"""
 IS_BACKTEST = False
-SYMBOL = 'AA'
+IS_LIVE = False
+symbol = "AAPL"
+
 
 class SmaCross1(bt.Strategy):
     # list of parameters which are configurable for the strategy
@@ -55,12 +64,12 @@ class SmaCross1(bt.Strategy):
 
     def next(self):
         # if fast crosses slow to the upside
-        if not self.positionsbyname[SYMBOL].size:
+        if not self.positionsbyname[symbol].size:
             if self.crossover > 0 or self.crossup > 0:
                 self.buy(data=data0, size=5)  # enter long
 
         # in the market & cross to the downside
-        if self.positionsbyname[SYMBOL].size:
+        if self.positionsbyname[symbol].size:
             if self.crossover <= 0 or self.crossdown < 0:
                 self.close(data=data0)  # close long position
 
@@ -74,18 +83,18 @@ if __name__ == '__main__':
     store = alpaca_backtrader_api.AlpacaStore(
         key_id=ALPACA_API_KEY,
         secret_key=ALPACA_SECRET_KEY,
-        paper=True,
+        paper=IS_LIVE,
         usePolygon=USE_POLYGON
     )
 
     DataFactory = store.getdata  # or use alpaca_backtrader_api.AlpacaData
     if IS_BACKTEST:
-        data0 = DataFactory(dataname=SYMBOL, historical=True,
+        data0 = DataFactory(dataname=symbol, historical=True,
                             fromdate=datetime(
                                 2015, 1, 1), timeframe=bt.TimeFrame.Days)
 
     else:
-        data0 = DataFactory(dataname=SYMBOL,
+        data0 = DataFactory(dataname=symbol,
                             historical=False,
                             timeframe=bt.TimeFrame.Days)
         # or just alpaca_backtrader_api.AlpacaBroker()
