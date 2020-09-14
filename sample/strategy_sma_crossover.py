@@ -81,6 +81,9 @@ class SmaCross1(bt.Strategy):
 
 
 if __name__ == '__main__':
+    import logging
+    logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
+
     cerebro = bt.Cerebro()
     cerebro.addstrategy(SmaCross1)
 
