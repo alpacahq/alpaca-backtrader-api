@@ -9,6 +9,17 @@ ALPACA_SECRET_KEY = "<secret_key>"
 #  False will do a back test
 ALPACA_PAPER = False
 
+"""
+You have 3 options: 
+ - backtest (IS_BACKTEST=True, IS_LIVE=False)
+ - paper trade (IS_BACKTEST=False, IS_LIVE=False) 
+ - live trade (IS_BACKTEST=False, IS_LIVE=True) 
+"""
+IS_BACKTEST = False
+IS_LIVE = False
+symbol = "AA"
+
+
 
 class SmaCross1(bt.Strategy):
     # list of parameters which are configurable for the strategy
@@ -43,11 +54,11 @@ class SmaCross1(bt.Strategy):
 
     def next(self):
         # if fast crosses slow to the upside
-        if not self.positionsbyname["AAPL"].size and self.crossover0 > 0:
+        if not self.positionsbyname[symbol].size and self.crossover0 > 0:
             self.buy(data=data0, size=5)  # enter long
 
         # in the market & cross to the downside
-        if self.positionsbyname["AAPL"].size and self.crossover0 <= 0:
+        if self.positionsbyname[symbol].size and self.crossover0 <= 0:
             self.close(data=data0)  # close long position
 
 
@@ -58,24 +69,29 @@ if __name__ == '__main__':
     store = alpaca_backtrader_api.AlpacaStore(
         key_id=ALPACA_API_KEY,
         secret_key=ALPACA_SECRET_KEY,
-        paper=True,
+        paper=IS_LIVE,
         usePolygon=USE_POLYGON
     )
 
     DataFactory = store.getdata  # or use alpaca_backtrader_api.AlpacaData
-    if ALPACA_PAPER:
-        data0 = DataFactory(dataname='AAPL',
-                            historical=False,
+    if IS_BACKTEST:
+        data0 = DataFactory(dataname=symbol,
+                            historical=True,
+                            fromdate=datetime(2020, 7, 1),
+                            todate=datetime(2020, 7, 11),
                             timeframe=bt.TimeFrame.Days)
+    else:
+        data0 = DataFactory(dataname=symbol,
+                            historical=False,
+                            timeframe=bt.TimeFrame.Days,
+                            backfill_start=True,
+                            )
         # or just alpaca_backtrader_api.AlpacaBroker()
         broker = store.getbroker()
         cerebro.setbroker(broker)
-    else:
-        data0 = DataFactory(dataname='AAPL', historical=True, fromdate=datetime(
-            2015, 1, 1), timeframe=bt.TimeFrame.Days)
     cerebro.adddata(data0)
 
-    if not ALPACA_PAPER:
+    if IS_BACKTEST:
         # backtrader broker set initial simulated cash
         cerebro.broker.setcash(100000.0)
 
