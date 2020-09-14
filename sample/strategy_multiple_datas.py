@@ -2,12 +2,15 @@ import alpaca_backtrader_api
 import backtrader as bt
 from datetime import datetime
 
-# Your credentials here
-ALPACA_API_KEY = "<key_id>"
-ALPACA_SECRET_KEY = "<secret_key>"
-# change to True if you want to do live paper trading with Alpaca Broker.
-#  False will do a back test
+
+"""
+You have 3 options: 
+ - backtest (IS_BACKTEST=True, IS_LIVE=False)
+ - paper trade (IS_BACKTEST=False, IS_LIVE=False) 
+ - live trade (IS_BACKTEST=False, IS_LIVE=True) 
+"""
 IS_BACKTEST = True
+IS_LIVE = False
 SYMBOL1 = 'AAPL'
 SYMBOL2 = 'GOOG'
 
@@ -73,7 +76,7 @@ if __name__ == '__main__':
     store = alpaca_backtrader_api.AlpacaStore(
         key_id=ALPACA_API_KEY,
         secret_key=ALPACA_SECRET_KEY,
-        paper=True,
+        paper=IS_LIVE,
         usePolygon=USE_POLYGON
     )
 
@@ -89,10 +92,14 @@ if __name__ == '__main__':
         broker = store.getbroker()
         cerebro.setbroker(broker)
     else:
-        data0 = DataFactory(dataname=SYMBOL1, historical=True, fromdate=datetime(
-            2015, 1, 1), timeframe=bt.TimeFrame.Days)
-        data1 = DataFactory(dataname=SYMBOL2, historical=True, fromdate=datetime(
-            2015, 1, 1), timeframe=bt.TimeFrame.Days)
+        data0 = DataFactory(dataname=SYMBOL1,
+                            historical=True,
+                            fromdate=datetime(
+                                2015, 1, 1), timeframe=bt.TimeFrame.Days)
+        data1 = DataFactory(dataname=SYMBOL2,
+                            historical=True,
+                            fromdate=datetime(
+                                2015, 1, 1), timeframe=bt.TimeFrame.Days)
     cerebro.adddata(data0)
     cerebro.adddata(data1)
 
