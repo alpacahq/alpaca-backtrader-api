@@ -212,7 +212,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
     _ENVPRACTICE = 'paper'
     _ENVLIVE = 'live'
     _ENV_PRACTICE_URL = 'https://paper-api.alpaca.markets'
-    _ENV_LIVE_URL = ''
+    _ENV_LIVE_URL = 'https://api.alpaca.markets'
 
     @classmethod
     def getdata(cls, *args, **kwargs):
