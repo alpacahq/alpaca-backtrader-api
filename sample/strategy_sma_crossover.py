@@ -22,6 +22,18 @@ symbol = "AA"
 
 
 class SmaCross1(bt.Strategy):
+    def notify_fund(self, cash, value, fundvalue, shares):
+        super().notify_fund(cash, value, fundvalue, shares)
+
+    def notify_store(self, msg, *args, **kwargs):
+        super().notify_store(msg, *args, **kwargs)
+
+    def notify_data(self, data, status, *args, **kwargs):
+        super().notify_data(data, status, *args, **kwargs)
+        print('*' * 5, 'DATA NOTIF:', data._getstatusname(status), *args)
+        if data._getstatusname(status) == "LIVE":
+            self.live_bars = True
+
     # list of parameters which are configurable for the strategy
     params = dict(
         pfast=10,  # period for the fast moving average
