@@ -91,7 +91,7 @@ using 'key_id' and 'secret_key'.
 The 'paper' parameter is default to False, which allows live trading.
 If you set it to True, then you are in the paper trading mode.
 
-## Running Multiple Algorithms/Datas
+## Running Multiple Strategies/Datas
 There's a way to execute an algorithm with multiple datas or/and execute more than one algorithm.<br>
 The websocket connection is limited to 1 connection per account. Alpaca backtrader opens a websocket connection for each data you define.<br>
 For that exact purpose this ![project](https://github.com/shlomikushchi/alpaca-proxy-agent)  was created<br>
