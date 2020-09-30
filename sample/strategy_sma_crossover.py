@@ -5,9 +5,6 @@ from datetime import datetime
 # Your credentials here
 ALPACA_API_KEY = "<key_id>"
 ALPACA_SECRET_KEY = "<secret_key>"
-# change to True if you want to do live paper trading with Alpaca Broker.
-#  False will do a back test
-ALPACA_PAPER = False
 
 """
 You have 3 options:
@@ -17,6 +14,8 @@ You have 3 options:
 """
 IS_BACKTEST = True
 IS_PAPER = False
+USE_POLYGON = False
+
 symbol = "AA"
 
 

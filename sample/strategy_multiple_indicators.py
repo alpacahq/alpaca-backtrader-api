@@ -16,6 +16,8 @@ You have 3 options:
 """
 IS_BACKTEST = True
 IS_PAPER = False
+USE_POLYGON = False
+
 symbol = "AAPL"
 
 
