@@ -6,9 +6,7 @@ from datetime import datetime
 # Your credentials here
 ALPACA_API_KEY = "<key_id>"
 ALPACA_SECRET_KEY = "<secret_key>"
-# change to True if you want to do live paper trading with Alpaca Broker.
-#  False will do a back test
-ALPACA_PAPER = False
+
 
 """
 You have 3 options: 
@@ -19,6 +17,7 @@ You have 3 options:
 IS_BACKTEST = False
 IS_LIVE = False
 symbol = "AAPL"
+USE_POLYGON = False
 
 
 class SmaCross(bt.SignalStrategy):
@@ -35,7 +34,7 @@ if __name__ == '__main__':
     store = alpaca_backtrader_api.AlpacaStore(
         key_id=ALPACA_API_KEY,
         secret_key=ALPACA_SECRET_KEY,
-        paper=IS_LIVE,
+        paper=not IS_LIVE,
         usePolygon=USE_POLYGON
     )
 

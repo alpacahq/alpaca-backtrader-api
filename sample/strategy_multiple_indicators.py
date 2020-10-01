@@ -83,7 +83,7 @@ if __name__ == '__main__':
     store = alpaca_backtrader_api.AlpacaStore(
         key_id=ALPACA_API_KEY,
         secret_key=ALPACA_SECRET_KEY,
-        paper=IS_LIVE,
+        paper=not IS_LIVE,
         usePolygon=USE_POLYGON
     )
 

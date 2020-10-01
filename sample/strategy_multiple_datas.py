@@ -3,6 +3,9 @@ import backtrader as bt
 from datetime import datetime
 
 
+# Your credentials here
+ALPACA_API_KEY = "<key_id>"
+ALPACA_SECRET_KEY = "<secret_key>"
 """
 You have 3 options: 
  - backtest (IS_BACKTEST=True, IS_LIVE=False)
@@ -13,6 +16,8 @@ IS_BACKTEST = True
 IS_LIVE = False
 SYMBOL1 = 'AAPL'
 SYMBOL2 = 'GOOG'
+USE_POLYGON = False
+
 
 class SmaCross1(bt.Strategy):
     # list of parameters which are configurable for the strategy
@@ -76,7 +81,7 @@ if __name__ == '__main__':
     store = alpaca_backtrader_api.AlpacaStore(
         key_id=ALPACA_API_KEY,
         secret_key=ALPACA_SECRET_KEY,
-        paper=IS_LIVE,
+        paper=not IS_LIVE,
         usePolygon=USE_POLYGON
     )
 
