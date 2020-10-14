@@ -683,7 +683,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
             response = _resample(cdl)
         # response = _back_to_aggs(cdl)
         else:
-            response = response.df
+            response = cdl
         response = response.dropna()
         response = response[~response.index.duplicated()]
         return response
