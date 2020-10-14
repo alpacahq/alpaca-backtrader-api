@@ -518,7 +518,12 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
             segment_start = dtbegin
             segment_end = segment_start + timedelta(weeks=2) if \
                 dtend - dtbegin >= timedelta(weeks=2) else dtend
-            while segment_end <= dtend and dtend not in cdl.index:
+            while segment_end <= dtend:
+                if not cdl.empty and dtend <= cdl.index[-1]:
+                    # when resampling the data dtend is not promised to be
+                    # a part of cdl. we just want to make sure we have data
+                    # that should contain it.
+                    break
                 response = self.oapi.polygon.historic_agg_v2(
                     dataname,
                     compression,
