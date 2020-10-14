@@ -363,7 +363,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
         :param timeframe: bt.TimeFrame
         :param compression: distance between samples. e.g if 1 =>
                  get sample every day. if 3 => get sample every 3 days
-        :param candleFormat: (bidask, midpoint, trades)
+        :param candleFormat: (bidask, midpoint, trades) - not used we get bars
         :param includeFirst:
         :return:
         """
