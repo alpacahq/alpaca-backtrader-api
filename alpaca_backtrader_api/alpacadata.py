@@ -62,7 +62,8 @@ class AlpacaData(with_metaclass(MetaAlpacaData, DataBase)):
         backfilling from IB will take place. This is ideally meant to backfill
         from already stored sources like a file on disk, but not limited to.
 
-      - ``bidask`` (default: ``True``)
+      - ``bidask`` (default: ``True``) - THIS IS NOT USED. WE GET BARS NOT
+                                         QUOTES/TICKS FOR HISTORIC PRICES
 
         If ``True``, then the historical/backfilling requests will request
         bid/ask prices from the server
