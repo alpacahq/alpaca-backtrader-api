@@ -24,6 +24,7 @@ class SmaCross1(bt.Strategy):
 
     def notify_store(self, msg, *args, **kwargs):
         super().notify_store(msg, *args, **kwargs)
+        self.log(msg)
 
     def notify_data(self, data, status, *args, **kwargs):
         super().notify_data(data, status, *args, **kwargs)
