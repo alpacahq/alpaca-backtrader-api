@@ -848,7 +848,9 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                     oid = o.id
                 except Exception:
                     if 'code' in o._raw:
-                        self.put_notification(o.message)
+                        self.put_notification(f"error submitting order "
+                                              f"code: {o.code}. msg: "
+                                              f"{o.message}")
                     else:
                         self.put_notification(
                             "General error from the Alpaca server")
