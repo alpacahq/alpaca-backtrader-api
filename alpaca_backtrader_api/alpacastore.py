@@ -622,7 +622,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
             let's drop earliest samples
             """
             for i, b in df.iterrows():
-                if i.time() == dtime(9, 30):
+                if i.time() >= dtime(9, 30):
                     return df[i:]
 
         def _resample(df):
