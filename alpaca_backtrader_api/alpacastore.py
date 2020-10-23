@@ -780,7 +780,8 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
         okwargs['side'] = 'buy' if order.isbuy() else 'sell'
         okwargs['type'] = self._ORDEREXECS[order.exectype]
         okwargs['time_in_force'] = "gtc"
-        if order.exectype not in [bt.Order.Market, bt.Order.StopTrail]:
+        if order.exectype not in [bt.Order.Market, bt.Order.StopTrail,
+                                  bt.Order.Stop]:
             okwargs['limit_price'] = str(order.created.price)
 
         if order.exectype in [bt.Order.StopLimit, bt.Order.Stop]:
