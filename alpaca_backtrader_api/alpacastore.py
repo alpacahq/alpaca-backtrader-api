@@ -518,12 +518,11 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
             segment_start = dtbegin
             segment_end = segment_start + timedelta(weeks=2) if \
                 dtend - dtbegin >= timedelta(weeks=2) else dtend
-            while segment_end <= dtend:
-                if not cdl.empty and dtend <= cdl.index[-1]:
-                    # when resampling the data dtend is not promised to be
-                    # a part of cdl. we just want to make sure we have data
-                    # that should contain it.
-                    break
+            while cdl.empty or cdl.index[-1] < dtend:
+                # we want to collect data until the last row is later than
+                # the requested dtend. we don't force it to contain dtend
+                # because it might be missing, or we may be resampling (so
+                # again, it will be missing)
                 response = self.oapi.polygon.historic_agg_v2(
                     dataname,
                     compression,
