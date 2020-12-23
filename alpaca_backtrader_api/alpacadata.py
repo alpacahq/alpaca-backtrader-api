@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from backtrader.feed import DataBase
 from backtrader import date2num, num2date
 from backtrader.utils.py3 import queue, with_metaclass
+import backtrader as bt
 
 from alpaca_backtrader_api import alpacastore
 
@@ -155,7 +156,13 @@ class AlpacaData(with_metaclass(MetaAlpacaData, DataBase)):
     def __init__(self, **kwargs):
         self.o = self._store(**kwargs)
         self._candleFormat = 'bidask' if self.p.bidask else 'midpoint'
+        self._timeframe = self.p.timeframe
         self.do_qcheck(True, 0)
+        if self._timeframe not in [bt.TimeFrame.Ticks,
+                                   bt.TimeFrame.Minutes,
+                                   bt.TimeFrame.Days]:
+            raise Exception(f'Unsupported time frame: '
+                            f'{bt.TimeFrame.TName(self._timeframe)}')
 
     def setenvironment(self, env):
         """
@@ -224,7 +231,9 @@ class AlpacaData(with_metaclass(MetaAlpacaData, DataBase)):
 
             self._state = self._ST_HISTORBACK
             return True
-        self.qlive = self.o.streaming_prices(self.p.dataname, tmout=tmout)
+        self.qlive = self.o.streaming_prices(self.p.dataname,
+                                             self.p.timeframe,
+                                             tmout=tmout)
         if instart:
             self._statelivereconn = self.p.backfill_start
         else:
@@ -299,8 +308,13 @@ class AlpacaData(with_metaclass(MetaAlpacaData, DataBase)):
                     if self._laststatus != self.LIVE:
                         if self.qlive.qsize() <= 1:  # very short live queue
                             self.put_notification(self.LIVE)
-
-                    ret = self._load_tick(msg)
+                    if self.p.timeframe == bt.TimeFrame.Ticks:
+                        ret = self._load_tick(msg)
+                    elif self.p.timeframe == bt.TimeFrame.Minutes:
+                        ret = self._load_agg(msg)
+                    else:
+                        # might want to act differently in the future
+                        ret = self._load_agg(msg)
                     if ret:
                         return True
 
@@ -406,6 +420,21 @@ class AlpacaData(with_metaclass(MetaAlpacaData, DataBase)):
         self.lines.low[0] = tick
         self.lines.close[0] = tick
         self.lines.volume[0] = 0.0
+        self.lines.openinterest[0] = 0.0
+
+        return True
+
+    def _load_agg(self, msg):
+        dtobj = datetime.utcfromtimestamp(int(msg['time']))
+        dt = date2num(dtobj)
+        if dt <= self.lines.datetime[-1]:
+            return False  # time already seen
+        self.lines.datetime[0] = dt
+        self.lines.open[0] = msg['open']
+        self.lines.high[0] = msg['high']
+        self.lines.low[0] = msg['low']
+        self.lines.close[0] = msg['close']
+        self.lines.volume[0] = msg['volume']
         self.lines.openinterest[0] = 0.0
 
         return True
