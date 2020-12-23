@@ -469,15 +469,6 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
             dtend = pd.Timestamp(pytz.timezone(NY).localize(dtend))
         if granularity == Granularity.Minute:
             calendar = trading_calendars.get_calendar(name='NYSE')
-            if pd.Timestamp('now', tz=NY).date() == dtend.date():
-                if calendar.is_open_on_minute(dtend):
-                    # we execute during market open, we don't want today's data
-                    # we will receive it through the websocket
-                    dtend = dtend.replace(hour=15,
-                                          minute=59,
-                                          second=0,
-                                          microsecond=0)
-                    dtend -= timedelta(days=1)
             while not calendar.is_open_on_minute(dtend):
                 dtend = dtend.replace(hour=15,
                                       minute=59,
