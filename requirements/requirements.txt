@@ -1,3 +1,4 @@
 backtrader==1.9.76.123
 alpaca-trade-api==0.51.0
 trading_calendars==2.0.0
+pandas<1.2.0  # this pandas requires python 3.7
