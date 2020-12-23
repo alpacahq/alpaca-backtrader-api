@@ -524,7 +524,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
             segment_start = dtbegin
             segment_end = segment_start + timedelta(weeks=2) if \
                 dtend - dtbegin >= timedelta(weeks=2) else dtend
-            while cdl.empty or cdl.index[-1] < dtend:
+            while cdl.empty or cdl.index[-1] < dtend.replace(second=0):
                 # we want to collect data until the last row is later than
                 # the requested dtend. we don't force it to contain dtend
                 # because it might be missing, or we may be resampling (so
