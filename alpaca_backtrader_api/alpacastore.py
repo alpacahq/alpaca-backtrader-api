@@ -532,7 +532,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                 response = self.oapi.polygon.historic_agg_v2(
                     dataname,
                     compression,
-                    granularity,
+                    'minute',
                     _from=self.iso_date(segment_start.isoformat()),
                     to=self.iso_date(segment_end.isoformat()))
                 # No result from the server, most likely error
