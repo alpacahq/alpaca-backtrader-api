@@ -466,7 +466,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
         if not dtend:
             dtend = pd.Timestamp('now', tz=NY)
         else:
-            dtend = pd.Timestamp(pytz.timezone(NY).localize(dtend))
+            dtend = pd.Timestamp(pytz.timezone('UTC').localize(dtend))
         if granularity == Granularity.Minute:
             calendar = trading_calendars.get_calendar(name='NYSE')
             while not calendar.is_open_on_minute(dtend):
@@ -485,7 +485,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
             # if we start the script during market hours we could get this
             # situation. this resolves that.
             dtbegin -= timedelta(days=1)
-        return dtbegin, dtend
+        return dtbegin, dtend.astimezone(NY)
 
     def get_aggs_from_polygon(self,
                               dataname,
