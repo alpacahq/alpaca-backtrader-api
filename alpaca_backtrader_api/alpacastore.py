@@ -170,6 +170,7 @@ class Streamer:
 
 class MetaSingleton(MetaParams):
     '''Metaclass to make a metaclassed class a singleton'''
+
     def __init__(cls, name, bases, dct):
         super(MetaSingleton, cls).__init__(name, bases, dct)
         cls._singleton = None
@@ -451,18 +452,12 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
         if not dtend:
             dtend = pd.Timestamp('now', tz=NY)
         else:
-            dtend = pd.Timestamp(pytz.timezone(NY).localize(dtend))
+            if dtend.tzinfo:
+                dtend = pd.Timestamp(dtend.astimezone(pytz.timezone(NY)))
+            else:
+                dtend = pd.Timestamp(pytz.timezone(NY).localize(dtend))
         if granularity == Granularity.Minute:
             calendar = trading_calendars.get_calendar(name='NYSE')
-            if pd.Timestamp('now', tz=NY).date() == dtend.date():
-                if calendar.is_open_on_minute(dtend):
-                    # we execute during market open, we don't want today's data
-                    # we will receive it through the websocket
-                    dtend = dtend.replace(hour=15,
-                                          minute=59,
-                                          second=0,
-                                          microsecond=0)
-                    dtend -= timedelta(days=1)
             while not calendar.is_open_on_minute(dtend):
                 dtend = dtend.replace(hour=15,
                                       minute=59,
@@ -474,7 +469,10 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
             delta = timedelta(days=days)
             dtbegin = dtend - delta
         else:
-            dtbegin = pd.Timestamp(pytz.timezone(NY).localize(dtbegin))
+            if dtbegin.tzinfo:
+                dtbegin = pd.Timestamp(dtbegin.astimezone(pytz.timezone(NY)))
+            else:
+                dtbegin = pd.Timestamp(pytz.timezone(NY).localize(dtbegin))
         while dtbegin > dtend:
             # if we start the script during market hours we could get this
             # situation. this resolves that.
@@ -500,6 +498,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
         time window of 2 weeks, and split the calls until we get all required
         data
         """
+
         def _clear_out_of_market_hours(df):
             """
             only interested in samples between 9:30, 16:00 NY time
@@ -569,6 +568,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
           but we need to manipulate it to be able to work with it
           smoothly and return data the same way polygon does
         """
+
         def _iterate_api_calls():
             """
             you could get max 1000 samples from the server. if we need more
@@ -829,6 +829,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                 if trans is None:
                     break
                 self._process_transaction(order_id, trans)
+
         while True:
             try:
                 if self.q_ordercreate.empty():
@@ -916,7 +917,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
             self._transpend[oid].append(trans)
         self._process_transaction(oid, trans)
 
-    _X_ORDER_FILLED = ('partially_filled', 'filled', )
+    _X_ORDER_FILLED = ('partially_filled', 'filled',)
 
     def _process_transaction(self, oid, trans):
         try:
