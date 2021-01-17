@@ -9,10 +9,10 @@ ALPACA_SECRET_KEY = "<secret_key>"
 
 
 """
-You have 3 options: 
+You have 3 options:
  - backtest (IS_BACKTEST=True, IS_LIVE=False)
- - paper trade (IS_BACKTEST=False, IS_LIVE=False) 
- - live trade (IS_BACKTEST=False, IS_LIVE=True) 
+ - paper trade (IS_BACKTEST=False, IS_LIVE=False)
+ - live trade (IS_BACKTEST=False, IS_LIVE=True)
 """
 IS_BACKTEST = False
 IS_LIVE = False
