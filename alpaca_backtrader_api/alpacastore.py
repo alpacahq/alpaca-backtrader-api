@@ -2,6 +2,7 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 import os
 import collections
+import time
 from enum import Enum
 import traceback
 
@@ -91,8 +92,15 @@ class API(tradeapi.REST):
 
 
 class Granularity(Enum):
+    Ticks = "ticks"
     Daily = "day"
     Minute = "minute"
+
+
+class StreamingMethod(Enum):
+    AccountUpdate = 'account_update'
+    Quote = "quote"
+    MinuteAgg = "minute_agg"
 
 
 class Streamer:
@@ -104,7 +112,7 @@ class Streamer:
             api_key='',
             api_secret='',
             instrument='',
-            method='',
+            method: StreamingMethod = StreamingMethod.AccountUpdate,
             base_url='',
             data_url='',
             data_stream='',
@@ -126,19 +134,23 @@ class Streamer:
         self.q = q
         self.conn.on('authenticated')(self.on_auth)
         self.conn.on(r'Q.*')(self.on_quotes)
+        self.conn.on(r'AM.*')(self.on_agg_min)
+        self.conn.on(r'A.*')(self.on_agg_min)
         self.conn.on(r'account_updates')(self.on_account)
         self.conn.on(r'trade_updates')(self.on_trade)
 
     def run(self):
         channels = []
-        if not self.method:
+        if self.method == StreamingMethod.AccountUpdate:
             channels = ['trade_updates']  # 'account_updates'
         else:
             if self.data_stream == 'polygon':
-                maps = {"quote": "Q."}
+                maps = {"quote": "Q.",
+                        "minute_agg": "AM."}
             elif self.data_stream == 'alpacadatav1':
-                maps = {"quote": "alpacadatav1/Q."}
-            channels = [maps[self.method] + self.instrument]
+                maps = {"quote": "alpacadatav1/Q.",
+                        "minute_agg": "alpacadatav1/AM."}
+            channels = [maps[self.method.value] + self.instrument]
 
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
@@ -159,7 +171,8 @@ class Streamer:
         self.q.put(msg)
 
     async def on_agg_min(self, conn, subject, msg):
-        self.q.put(msg)
+        msg._raw['time'] = msg.end.to_pydatetime().timestamp()
+        self.q.put(msg._raw)
 
     async def on_account(self, conn, stream, msg):
         self.q.put(msg)
@@ -308,6 +321,8 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
         return positions
 
     def get_granularity(self, timeframe, compression) -> Granularity:
+        if timeframe == bt.TimeFrame.Ticks:
+            return Granularity.Ticks
         if timeframe == bt.TimeFrame.Minutes:
             return Granularity.Minute
         elif timeframe == bt.TimeFrame.Days:
@@ -440,7 +455,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
         dates may or may not be specified by the user.
         when they do, they are probably don't include NY timezome data
         also, when granularity is minute, we want to make sure we get data when
-        market is opened. so if it doesn't - let's get set end date to be last
+        market is opened. so if it doesn't - let's set end date to be last
         known minute with opened market.
         this nethod takes care of all these issues.
         :param dtbegin:
@@ -451,18 +466,9 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
         if not dtend:
             dtend = pd.Timestamp('now', tz=NY)
         else:
-            dtend = pd.Timestamp(pytz.timezone(NY).localize(dtend))
+            dtend = pd.Timestamp(pytz.timezone('UTC').localize(dtend))
         if granularity == Granularity.Minute:
             calendar = trading_calendars.get_calendar(name='NYSE')
-            if pd.Timestamp('now', tz=NY).date() == dtend.date():
-                if calendar.is_open_on_minute(dtend):
-                    # we execute during market open, we don't want today's data
-                    # we will receive it through the websocket
-                    dtend = dtend.replace(hour=15,
-                                          minute=59,
-                                          second=0,
-                                          microsecond=0)
-                    dtend -= timedelta(days=1)
             while not calendar.is_open_on_minute(dtend):
                 dtend = dtend.replace(hour=15,
                                       minute=59,
@@ -479,7 +485,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
             # if we start the script during market hours we could get this
             # situation. this resolves that.
             dtbegin -= timedelta(days=1)
-        return dtbegin, dtend
+        return dtbegin, dtend.astimezone(NY)
 
     def get_aggs_from_polygon(self,
                               dataname,
@@ -518,7 +524,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
             segment_start = dtbegin
             segment_end = segment_start + timedelta(weeks=2) if \
                 dtend - dtbegin >= timedelta(weeks=2) else dtend
-            while cdl.empty or cdl.index[-1] < dtend:
+            while cdl.empty or cdl.index[-1] < dtend.replace(second=0):
                 # we want to collect data until the last row is later than
                 # the requested dtend. we don't force it to contain dtend
                 # because it might be missing, or we may be resampling (so
@@ -526,7 +532,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                 response = self.oapi.polygon.historic_agg_v2(
                     dataname,
                     compression,
-                    granularity,
+                    'minute',
                     _from=self.iso_date(segment_start.isoformat()),
                     to=self.iso_date(segment_end.isoformat()))
                 # No result from the server, most likely error
@@ -585,9 +591,12 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                     timeframe = "5Min"
                 elif granularity == 'minute' and compression == 15:
                     timeframe = "15Min"
+                elif granularity == 'ticks':
+                    timeframe = "minute"
                 else:
                     timeframe = granularity
                 r = self.oapi.get_barset(dataname,
+                                         'minute' if timeframe == 'ticks' else
                                          timeframe,
                                          limit=1000,
                                          end=curr.isoformat()
@@ -687,22 +696,31 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
         response = response[~response.index.duplicated()]
         return response
 
-    def streaming_prices(self, dataname, tmout=None):
+    def streaming_prices(self, dataname, timeframe, tmout=None):
         q = queue.Queue()
-        kwargs = {'q': q, 'dataname': dataname, 'tmout': tmout}
+        kwargs = {'q': q,
+                  'dataname': dataname,
+                  'timeframe': timeframe,
+                  'tmout': tmout}
         t = threading.Thread(target=self._t_streaming_prices, kwargs=kwargs)
         t.daemon = True
         t.start()
         return q
 
-    def _t_streaming_prices(self, dataname, q, tmout):
+    def _t_streaming_prices(self, dataname, timeframe, q, tmout):
         if tmout is not None:
             _time.sleep(tmout)
+
+        if timeframe == bt.TimeFrame.Ticks:
+            method = StreamingMethod.Quote
+        elif timeframe == bt.TimeFrame.Minutes:
+            method = StreamingMethod.MinuteAgg
+
         streamer = Streamer(q,
                             api_key=self.p.key_id,
                             api_secret=self.p.secret_key,
                             instrument=dataname,
-                            method='quote',
+                            method=method,
                             base_url=self.p.base_url,
                             data_url=os.environ.get("DATA_PROXY_WS", ''),
                             data_stream='polygon' if self.p.usePolygon else
