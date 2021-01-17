@@ -1,5 +1,4 @@
 backtrader==1.9.76.123
 alpaca-trade-api==0.51.0
-trading_calendars==2.0.0
-pandas<1.2.0  # this package requires python 3.7
-numpy<1.20.0  # this package requires python 3.7
+trading_calendars==2.1.1
+
