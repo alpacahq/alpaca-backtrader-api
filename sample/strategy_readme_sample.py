@@ -9,10 +9,10 @@ ALPACA_SECRET_KEY = "<secret_key>"
 
 
 """
-You have 3 options: 
+You have 3 options:
  - backtest (IS_BACKTEST=True, IS_LIVE=False)
- - paper trade (IS_BACKTEST=False, IS_LIVE=False) 
- - live trade (IS_BACKTEST=False, IS_LIVE=True) 
+ - paper trade (IS_BACKTEST=False, IS_LIVE=False)
+ - live trade (IS_BACKTEST=False, IS_LIVE=True)
 """
 IS_BACKTEST = False
 IS_LIVE = False
@@ -21,10 +21,10 @@ USE_POLYGON = False
 
 
 class SmaCross(bt.SignalStrategy):
-  def __init__(self):
-    sma1, sma2 = bt.ind.SMA(period=10), bt.ind.SMA(period=30)
-    crossover = bt.ind.CrossOver(sma1, sma2)
-    self.signal_add(bt.SIGNAL_LONG, crossover)
+    def __init__(self):
+        sma1, sma2 = bt.ind.SMA(period=10), bt.ind.SMA(period=30)
+        crossover = bt.ind.CrossOver(sma1, sma2)
+        self.signal_add(bt.SIGNAL_LONG, crossover)
 
 
 if __name__ == '__main__':

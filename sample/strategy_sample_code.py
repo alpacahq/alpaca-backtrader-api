@@ -6,9 +6,9 @@ import datetime
 
 # The above could be sent to an independent module
 import backtrader as bt
-from backtrader.utils import flushfile  # win32 quick stdout flushing
 
 import alpaca_backtrader_api
+
 
 class TestStrategy(bt.Strategy):
     params = dict(
@@ -186,7 +186,7 @@ def runstrategy():
     store = alpaca_backtrader_api.AlpacaStore(**storekwargs)
 
     broker = store.getbroker()  # AlpacaBroker
-    cerebro.setbroker(broker) 
+    cerebro.setbroker(broker)
 
     timeframe = bt.TimeFrame.TFrame(args.timeframe)
     # Manage data1 parameters
@@ -209,7 +209,7 @@ def runstrategy():
         dtformat = '%Y-%m-%d' + ('T%H:%M:%S' * ('T' in args.fromdate))
         fromdate = datetime.datetime.strptime(args.fromdate, dtformat)
 
-    DataFactory = store.getdata # AlpacaData
+    DataFactory = store.getdata  # AlpacaData
 
     datakwargs = dict(
         timeframe=datatf, compression=datacomp,
