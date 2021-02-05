@@ -103,10 +103,12 @@ if __name__ == '__main__':
     if not IS_BACKTEST:
         data0 = DataFactory(dataname=SYMBOL1,
                             historical=False,
-                            timeframe=bt.TimeFrame.Days)
+                            timeframe=bt.TimeFrame.Ticks,
+                            backfill_start=False)
         data1 = DataFactory(dataname=SYMBOL2,
                             historical=False,
-                            timeframe=bt.TimeFrame.Days)
+                            timeframe=bt.TimeFrame.Ticks,
+                            backfill_start=False)
         # or just alpaca_backtrader_api.AlpacaBroker()
         broker = store.getbroker()
         cerebro.setbroker(broker)

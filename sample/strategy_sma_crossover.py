@@ -102,8 +102,8 @@ if __name__ == '__main__':
     else:
         data0 = DataFactory(dataname=symbol,
                             historical=False,
-                            timeframe=bt.TimeFrame.Days,
-                            backfill_start=True,
+                            timeframe=bt.TimeFrame.Ticks,
+                            backfill_start=False,
                             )
         # or just alpaca_backtrader_api.AlpacaBroker()
         broker = store.getbroker()
