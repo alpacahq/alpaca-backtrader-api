@@ -1,6 +1,6 @@
 import alpaca_backtrader_api
 import backtrader as bt
-from datetime import datetime, timedelta
+from datetime import datetime
 
 # Your credentials here
 ALPACA_API_KEY = "<key_id>"
