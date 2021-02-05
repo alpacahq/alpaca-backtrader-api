@@ -46,9 +46,7 @@ if __name__ == '__main__':
                         historical=False,
                         timeframe=bt.TimeFrame.Minutes,
                         qcheck=10.0,
-                        backfill_start=True,
-                        fromdate=datetime.utcnow() - timedelta(
-                            minutes=20)
+                        backfill_start=False,
                         )
     broker = store.getbroker()
     cerebro.setbroker(broker)
