@@ -403,7 +403,7 @@ class AlpacaData(with_metaclass(MetaAlpacaData, DataBase)):
                     return False
 
     def _load_tick(self, msg):
-        dtobj = datetime.utcfromtimestamp(int(msg['time']))
+        dtobj = datetime.utcfromtimestamp(msg['time'])
         dt = date2num(dtobj)
         if dt <= self.lines.datetime[-1]:
             return False  # time already seen

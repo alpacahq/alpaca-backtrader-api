@@ -488,11 +488,12 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                 dtbegin = pd.Timestamp(dtbegin.astimezone(pytz.timezone(NY)))
             else:
                 dtbegin = pd.Timestamp(pytz.timezone(NY).localize(dtbegin))
+
         while dtbegin > dtend:
             # if we start the script during market hours we could get this
             # situation. this resolves that.
             dtbegin -= timedelta(days=1)
-        return dtbegin, dtend.astimezone(NY)
+        return dtbegin.astimezone(NY), dtend.astimezone(NY)
 
     def get_aggs_from_polygon(self,
                               dataname,
