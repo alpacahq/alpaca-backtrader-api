@@ -3,6 +3,7 @@ from __future__ import (absolute_import, division, print_function,
 
 from datetime import datetime, timedelta
 
+import pytz
 from backtrader.feed import DataBase
 from backtrader import date2num, num2date
 from backtrader.utils.py3 import queue, with_metaclass
@@ -133,6 +134,7 @@ class AlpacaData(with_metaclass(MetaAlpacaData, DataBase)):
         ('reconnect', True),
         ('reconnections', -1),  # forever
         ('reconntimeout', 5.0),
+        ('tz', pytz.timezone('US/Eastern')),
     )
 
     _store = alpacastore.AlpacaStore
@@ -217,11 +219,11 @@ class AlpacaData(with_metaclass(MetaAlpacaData, DataBase)):
             self.put_notification(self.DELAYED)
             dtend = None
             if self.todate < float('inf'):
-                dtend = num2date(self.todate)
+                dtend = self.p.tz.localize(num2date(self.todate))
 
             dtbegin = None
             if self.fromdate > float('-inf'):
-                dtbegin = num2date(self.fromdate)
+                dtbegin = self.p.tz.localize(num2date(self.fromdate))
 
             self.qhist = self.o.candles(
                 self.p.dataname, dtbegin, dtend,
@@ -333,12 +335,12 @@ class AlpacaData(with_metaclass(MetaAlpacaData, DataBase)):
                     # len == 1 ... forwarded for the 1st time
                     dtbegin = self.datetime.datetime(-1)
                 elif self.fromdate > float('-inf'):
-                    dtbegin = num2date(self.fromdate)
+                    dtbegin = self.p.tz.localize(num2date(self.fromdate))
                 else:  # 1st bar and no begin set
                     # passing None to fetch max possible in 1 request
                     dtbegin = None
 
-                dtend = datetime.utcfromtimestamp(int(msg['time']))
+                dtend = datetime.fromtimestamp(int(msg['time']), tz=pytz.utc)
 
                 self.qhist = self.o.candles(
                     self.p.dataname, dtbegin, dtend,
