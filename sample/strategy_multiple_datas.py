@@ -86,6 +86,7 @@ class SmaCross1(bt.Strategy):
             self.close(data=data1)  # close long position
 
 
+
 if __name__ == '__main__':
     import logging
     logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
