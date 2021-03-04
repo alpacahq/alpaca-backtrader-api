@@ -14,6 +14,8 @@ import threading
 import asyncio
 
 import alpaca_trade_api as tradeapi
+from alpaca_trade_api.rest import TimeFrame
+from alpaca_trade_api.stream import Stream
 import pytz
 import requests
 import pandas as pd
@@ -115,7 +117,6 @@ class Streamer:
             method: StreamingMethod = StreamingMethod.AccountUpdate,
             base_url='',
             data_url='',
-            data_stream='',
             *args,
             **kwargs):
         try:
@@ -123,39 +124,27 @@ class Streamer:
             asyncio.get_event_loop()
         except RuntimeError:
             asyncio.set_event_loop(asyncio.new_event_loop())
-        self.data_stream = data_stream
-        self.conn = tradeapi.StreamConn(api_key,
-                                        api_secret,
-                                        base_url,
-                                        data_url=data_url,
-                                        data_stream=self.data_stream)
+
+        self.conn = Stream(api_key,
+                           api_secret,
+                           base_url,
+                           data_feed='iex')
         self.instrument = instrument
         self.method = method
         self.q = q
-        self.conn.on('authenticated')(self.on_auth)
-        self.conn.on(r'Q.*')(self.on_quotes)
-        self.conn.on(r'AM.*')(self.on_agg_min)
-        self.conn.on(r'A.*')(self.on_agg_min)
-        self.conn.on(r'account_updates')(self.on_account)
-        self.conn.on(r'trade_updates')(self.on_trade)
 
     def run(self):
-        channels = []
         if self.method == StreamingMethod.AccountUpdate:
-            channels = ['trade_updates']  # 'account_updates'
-        else:
-            maps = {"quote": "alpacadatav1/Q.",
-                    "minute_agg": "alpacadatav1/AM."}
+            stream.subscribe_trade_updates(self.on_trade)
+        elif self.method == StreamingMethod.MinuteAgg:
+            stream.subscribe_bars(self.on_agg_min, self.instrument)
+        elif self.method == StreamingMethod.Quote:
+            stream.subscribe_quotes(self.on_quotes, self.instrument)
 
-            channels = [maps[self.method.value] + self.instrument]
-
+        # this code runs in a new thread. we need to set the loop for it
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-        self.conn.run(channels)
-
-    # Setup event handlers
-    async def on_auth(self, conn, stream, msg):
-        pass
+        self.conn.run()
 
     async def on_listen(self, conn, stream, msg):
         pass
@@ -214,7 +203,6 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
         ('key_id', ''),
         ('secret_key', ''),
         ('paper', False),
-        ('usePolygon', False),
         ('account_tmout', 10.0),  # account balance refresh timeout
         ('api_version', None)
     )
@@ -359,7 +347,6 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                             api_secret=self.p.secret_key,
                             base_url=self.p.base_url,
                             data_url=os.environ.get("DATA_PROXY_WS", ''),
-                            data_stream='alpacadatav1'
                             )
 
         streamer.run()
@@ -411,7 +398,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
             cdl = self.get_aggs_from_alpaca(dataname,
                                             dtbegin,
                                             dtend,
-                                            granularity.value,
+                                            granularity,
                                             compression)
         except AlpacaError as e:
             print(str(e))
@@ -480,7 +467,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                              dataname,
                              start,
                              end,
-                             granularity,
+                             granularity: Granularity,
                              compression):
         """
         https://alpaca.markets/docs/api-documentation/api-v2/market-data/bars/
@@ -504,6 +491,19 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
           but we need to manipulate it to be able to work with it
           smoothly
         """
+        def _granularity_to_timeframe(granularity):
+            if granularity in [Granularity.Minute, Granularity.Ticks]:
+                timeframe = TimeFrame.Minute
+            elif granularity == Granularity.Daily:
+                timeframe = TimeFrame.Day
+            elif granularity == 'ticks':
+                timeframe = "minute"
+            else:
+                # default to day if not configured properly. subject to
+                # change.
+                timeframe = TimeFrame.Day
+            return timeframe
+
         def _iterate_api_calls():
             """
             you could get max 1000 samples from the server. if we need more
@@ -516,20 +516,8 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
             curr = end
             response = []
             while not got_all:
-                if granularity == 'minute' and compression == 5:
-                    timeframe = "5Min"
-                elif granularity == 'minute' and compression == 15:
-                    timeframe = "15Min"
-                elif granularity == 'ticks':
-                    timeframe = "minute"
-                else:
-                    timeframe = granularity
-                r = self.oapi.get_barset(dataname,
-                                         'minute' if timeframe == 'ticks' else
-                                         timeframe,
-                                         limit=1000,
-                                         end=curr.isoformat()
-                                         )[dataname]
+                timeframe = _granularity_to_timeframe(granularity)
+                r = self.oapi.get_bars(dataname, timeframe, start, curr)
                 if r:
                     earliest_sample = r[0].t
                     r = r._raw
@@ -568,7 +556,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
             may want to work with different window size (5min)
             """
 
-            if granularity == 'minute':
+            if granularity == Granularity.Minute:
                 sample_size = f"{compression}Min"
             else:
                 sample_size = f"{compression}D"
@@ -581,7 +569,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                     ('volume', 'sum'),
                 ])
             )
-            if granularity == 'minute':
+            if granularity == Granularity.Minute:
                 return df.between_time("09:30", "16:00")
             else:
                 return df
@@ -600,10 +588,9 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
         #     return Aggs({"results": response})
 
         if not start:
-            response = self.oapi.get_barset(dataname,
-                                            granularity,
-                                            limit=1000,
-                                            end=end)[dataname]._raw
+            timeframe = _granularity_to_timeframe(granularity)
+            response = self.oapi.get_bars(dataname,
+                                          timeframe, start, curr)._raw
         else:
             response = _iterate_api_calls()
         for bar in response:
@@ -613,7 +600,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
         response = Aggs({"results": response})
 
         cdl = response.df
-        if granularity == 'minute':
+        if granularity == Granularity.Minute:
             cdl = _clear_out_of_market_hours(cdl)
             cdl = _drop_early_samples(cdl)
         if compression != 1:
@@ -651,8 +638,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                             instrument=dataname,
                             method=method,
                             base_url=self.p.base_url,
-                            data_url=os.environ.get("DATA_PROXY_WS", ''),
-                            data_stream='alpacadatav1')
+                            data_url=os.environ.get("DATA_PROXY_WS", ''))
 
         streamer.run()
 
