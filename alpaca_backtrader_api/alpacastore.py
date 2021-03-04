@@ -144,12 +144,9 @@ class Streamer:
         if self.method == StreamingMethod.AccountUpdate:
             channels = ['trade_updates']  # 'account_updates'
         else:
-            if self.data_stream == 'polygon':
-                maps = {"quote": "Q.",
-                        "minute_agg": "AM."}
-            elif self.data_stream == 'alpacadatav1':
-                maps = {"quote": "alpacadatav1/Q.",
-                        "minute_agg": "alpacadatav1/AM."}
+            maps = {"quote": "alpacadatav1/Q.",
+                    "minute_agg": "alpacadatav1/AM."}
+
             channels = [maps[self.method.value] + self.instrument]
 
         loop = asyncio.new_event_loop()
@@ -362,8 +359,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                             api_secret=self.p.secret_key,
                             base_url=self.p.base_url,
                             data_url=os.environ.get("DATA_PROXY_WS", ''),
-                            data_stream='polygon' if self.p.usePolygon else
-                            'alpacadatav1'
+                            data_stream='alpacadatav1'
                             )
 
         streamer.run()
@@ -412,18 +408,11 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
             q.put(e.error_response)
             return
         try:
-            if self.p.usePolygon:
-                cdl = self.get_aggs_from_polygon(dataname,
-                                                 dtbegin,
-                                                 dtend,
-                                                 granularity.value,
-                                                 compression)
-            else:
-                cdl = self.get_aggs_from_alpaca(dataname,
-                                                dtbegin,
-                                                dtend,
-                                                granularity.value,
-                                                compression)
+            cdl = self.get_aggs_from_alpaca(dataname,
+                                            dtbegin,
+                                            dtend,
+                                            granularity.value,
+                                            compression)
         except AlpacaError as e:
             print(str(e))
             q.put(e.error_response)
@@ -487,66 +476,6 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
             dtbegin -= timedelta(days=1)
         return dtbegin.astimezone(NY), dtend.astimezone(NY)
 
-    def get_aggs_from_polygon(self,
-                              dataname,
-                              dtbegin,
-                              dtend,
-                              granularity,
-                              compression):
-        """
-        so polygon has a much more convenient api for this than alpaca because
-        we could insert the compression in to the api call and we don't need to
-        resample it. but, at this point in time, something is not working
-        properly and data is returned in segments. meaning, we have patches of
-        missing data. e.g we request data from 2020-03-01 to 2020-07-01 and we
-        get something like this: 2020-03-01:2020-03-15, 2020-06-25:2020-07-01
-        so that makes life difficult.. there's no way to know which patch will
-        be returned and which one we should try to get again.
-        so the solution must be, ask data in segments. I select an arbitrary
-        time window of 2 weeks, and split the calls until we get all required
-        data
-        """
-        def _clear_out_of_market_hours(df):
-            """
-            only interested in samples between 9:30, 16:00 NY time
-            """
-            return df.between_time("09:30", "16:00")
-
-        if granularity == 'day':
-            cdl = self.oapi.polygon.historic_agg_v2(
-                dataname,
-                compression,
-                granularity,
-                _from=self.iso_date(dtbegin.isoformat()),
-                to=self.iso_date(dtend.isoformat())).df
-        else:
-            cdl = pd.DataFrame()
-            segment_start = dtbegin
-            segment_end = segment_start + timedelta(weeks=2) if \
-                dtend - dtbegin >= timedelta(weeks=2) else dtend
-            while cdl.empty or cdl.index[-1] < dtend.replace(second=0):
-                # we want to collect data until the last row is later than
-                # the requested dtend. we don't force it to contain dtend
-                # because it might be missing, or we may be resampling (so
-                # again, it will be missing)
-                response = self.oapi.polygon.historic_agg_v2(
-                    dataname,
-                    compression,
-                    'minute',
-                    _from=self.iso_date(segment_start.isoformat()),
-                    to=self.iso_date(segment_end.isoformat()))
-                # No result from the server, most likely error
-                if response.df.shape[0] == 0 and cdl.shape[0] == 0:
-                    raise Exception("received empty response")
-                temp = response.df
-                cdl = pd.concat([cdl, temp])
-                cdl = cdl[~cdl.index.duplicated()]
-                segment_start = segment_end
-                segment_end = segment_start + timedelta(weeks=2) if \
-                    dtend - dtbegin >= timedelta(weeks=2) else dtend
-            cdl = _clear_out_of_market_hours(cdl)
-        return cdl
-
     def get_aggs_from_alpaca(self,
                              dataname,
                              start,
@@ -573,7 +502,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
           the thing is get_aggs work nicely for days but not for minutes, and
           it is not a documented API. barset on the other hand does
           but we need to manipulate it to be able to work with it
-          smoothly and return data the same way polygon does
+          smoothly
         """
         def _iterate_api_calls():
             """
@@ -723,8 +652,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                             method=method,
                             base_url=self.p.base_url,
                             data_url=os.environ.get("DATA_PROXY_WS", ''),
-                            data_stream='polygon' if self.p.usePolygon else
-                            'alpacadatav1')
+                            data_stream='alpacadatav1')
 
         streamer.run()
 
