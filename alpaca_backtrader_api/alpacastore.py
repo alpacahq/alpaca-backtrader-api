@@ -589,8 +589,9 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
 
         if not start:
             timeframe = _granularity_to_timeframe(granularity)
+            start = end - timedelta(days=1)
             response = self.oapi.get_bars(dataname,
-                                          timeframe, start, curr)._raw
+                                          timeframe, start, end)._raw
         else:
             response = _iterate_api_calls()
         for bar in response:
