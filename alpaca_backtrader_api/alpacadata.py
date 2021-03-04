@@ -2,7 +2,7 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 from datetime import datetime, timedelta
-
+import pandas as pd
 from backtrader.feed import DataBase
 from backtrader import date2num, num2date
 from backtrader.utils.py3 import queue, with_metaclass
@@ -338,7 +338,7 @@ class AlpacaData(with_metaclass(MetaAlpacaData, DataBase)):
                     # passing None to fetch max possible in 1 request
                     dtbegin = None
 
-                dtend = datetime.utcfromtimestamp(int(msg['time']))
+                dtend = pd.Timestamp(msg['time'], unit='ns')
 
                 self.qhist = self.o.candles(
                     self.p.dataname, dtbegin, dtend,
@@ -401,7 +401,7 @@ class AlpacaData(with_metaclass(MetaAlpacaData, DataBase)):
                     return False
 
     def _load_tick(self, msg):
-        dtobj = datetime.utcfromtimestamp(msg['time'])
+        dtobj = pd.Timestamp(msg['time'], unit='ns')
         dt = date2num(dtobj)
         if dt <= self.lines.datetime[-1]:
             return False  # time already seen
@@ -413,8 +413,8 @@ class AlpacaData(with_metaclass(MetaAlpacaData, DataBase)):
 
         # Put the prices into the bar
         tick = float(
-            msg['askprice']) if self.p.useask else float(
-            msg['bidprice'])
+            msg['ask_price']) if self.p.useask else float(
+            msg['bid_price'])
         self.lines.open[0] = tick
         self.lines.high[0] = tick
         self.lines.low[0] = tick
@@ -425,7 +425,7 @@ class AlpacaData(with_metaclass(MetaAlpacaData, DataBase)):
         return True
 
     def _load_agg(self, msg):
-        dtobj = datetime.utcfromtimestamp(int(msg['time']))
+        dtobj = pd.Timestamp(msg['time'], unit='ns')
         dt = date2num(dtobj)
         if dt <= self.lines.datetime[-1]:
             return False  # time already seen
