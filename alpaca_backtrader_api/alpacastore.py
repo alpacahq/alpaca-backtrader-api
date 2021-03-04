@@ -135,11 +135,11 @@ class Streamer:
 
     def run(self):
         if self.method == StreamingMethod.AccountUpdate:
-            stream.subscribe_trade_updates(self.on_trade)
+            self.conn.subscribe_trade_updates(self.on_trade)
         elif self.method == StreamingMethod.MinuteAgg:
-            stream.subscribe_bars(self.on_agg_min, self.instrument)
+            self.conn.subscribe_bars(self.on_agg_min, self.instrument)
         elif self.method == StreamingMethod.Quote:
-            stream.subscribe_quotes(self.on_quotes, self.instrument)
+            self.conn.subscribe_quotes(self.on_quotes, self.instrument)
 
         # this code runs in a new thread. we need to set the loop for it
         loop = asyncio.new_event_loop()
