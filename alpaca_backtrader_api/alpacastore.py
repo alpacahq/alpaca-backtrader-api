@@ -149,21 +149,18 @@ class Streamer:
     async def on_listen(self, conn, stream, msg):
         pass
 
-    async def on_quotes(self, conn, subject, msg):
-        msg._raw['time'] = msg.timestamp.to_pydatetime().timestamp()
+    async def on_quotes(self, msg):
+        msg._raw['time'] = msg.timestamp
         self.q.put(msg._raw)
 
-    async def on_agg_sec(self, conn, subject, msg):
-        self.q.put(msg)
-
-    async def on_agg_min(self, conn, subject, msg):
-        msg._raw['time'] = msg.end.to_pydatetime().timestamp()
+    async def on_agg_min(self, msg):
+        msg._raw['time'] = msg.timestamp
         self.q.put(msg._raw)
 
-    async def on_account(self, conn, stream, msg):
+    async def on_account(self, msg):
         self.q.put(msg)
 
-    async def on_trade(self, conn, stream, msg):
+    async def on_trade(self, msg):
         self.q.put(msg)
 
 
@@ -632,6 +629,9 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
             method = StreamingMethod.Quote
         elif timeframe == bt.TimeFrame.Minutes:
             method = StreamingMethod.MinuteAgg
+        else:
+            method = StreamingMethod.MinuteAgg
+
 
         streamer = Streamer(q,
                             api_key=self.p.key_id,
