@@ -133,6 +133,7 @@ class AlpacaData(with_metaclass(MetaAlpacaData, DataBase)):
         ('reconnect', True),
         ('reconnections', -1),  # forever
         ('reconntimeout', 5.0),
+        ('data_feed', 'iex'),  # options iex/sip for pro
     )
 
     _store = alpacastore.AlpacaStore
@@ -233,7 +234,8 @@ class AlpacaData(with_metaclass(MetaAlpacaData, DataBase)):
             return True
         self.qlive = self.o.streaming_prices(self.p.dataname,
                                              self.p.timeframe,
-                                             tmout=tmout)
+                                             tmout=tmout,
+                                             data_feed=self.p.data_feed)
         if instart:
             self._statelivereconn = self.p.backfill_start
         else:

@@ -117,6 +117,7 @@ class Streamer:
             method: StreamingMethod = StreamingMethod.AccountUpdate,
             base_url='',
             data_url='',
+            data_feed='iex',
             *args,
             **kwargs):
         try:
@@ -128,7 +129,7 @@ class Streamer:
         self.conn = Stream(api_key,
                            api_secret,
                            base_url,
-                           data_feed='iex')
+                           data_feed=data_feed)
         self.instrument = instrument
         self.method = method
         self.q = q
@@ -610,18 +611,20 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
         response = response[~response.index.duplicated()]
         return response
 
-    def streaming_prices(self, dataname, timeframe, tmout=None):
+    def streaming_prices(self,
+                         dataname, timeframe, tmout=None, data_feed='iex'):
         q = queue.Queue()
         kwargs = {'q': q,
                   'dataname': dataname,
                   'timeframe': timeframe,
+                  'data_feed': data_feed,
                   'tmout': tmout}
         t = threading.Thread(target=self._t_streaming_prices, kwargs=kwargs)
         t.daemon = True
         t.start()
         return q
 
-    def _t_streaming_prices(self, dataname, timeframe, q, tmout):
+    def _t_streaming_prices(self, dataname, timeframe, q, tmout, data_feed):
         if tmout is not None:
             _time.sleep(tmout)
 
@@ -639,7 +642,8 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                             instrument=dataname,
                             method=method,
                             base_url=self.p.base_url,
-                            data_url=os.environ.get("DATA_PROXY_WS", ''))
+                            data_url=os.environ.get("DATA_PROXY_WS", ''),
+                            data_feed=data_feed)
 
         streamer.run()
 
