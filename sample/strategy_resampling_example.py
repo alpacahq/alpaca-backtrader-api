@@ -45,6 +45,7 @@ if __name__ == '__main__':
                         timeframe=bt.TimeFrame.Minutes,
                         qcheck=10.0,
                         backfill_start=False,
+                        data_feed='iex'
                         )
     broker = store.getbroker()
     cerebro.setbroker(broker)
