@@ -1,7 +1,7 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 import pandas as pd
 from backtrader.feed import DataBase
 from backtrader import date2num, num2date
