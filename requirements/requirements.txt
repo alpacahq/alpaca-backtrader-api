@@ -1,4 +1,4 @@
 backtrader==1.9.76.123
-alpaca-trade-api==0.52.0
+alpaca-trade-api==1.2.1
 trading_calendars==2.1.1
 
