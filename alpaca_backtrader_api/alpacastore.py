@@ -21,7 +21,6 @@ import requests
 import pandas as pd
 
 import backtrader as bt
-from alpaca_trade_api.entity import Aggs
 from backtrader.metabase import MetaParams
 from backtrader.utils.py3 import queue, with_metaclass
 
@@ -167,6 +166,7 @@ class Streamer:
 
 class MetaSingleton(MetaParams):
     '''Metaclass to make a metaclassed class a singleton'''
+
     def __init__(cls, name, bases, dct):
         super(MetaSingleton, cls).__init__(name, bases, dct)
         cls._singleton = None
@@ -285,11 +285,11 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
 
     # Alpaca supported granularities
     _GRANULARITIES = {
-        (bt.TimeFrame.Minutes, 1): '1Min',
-        (bt.TimeFrame.Minutes, 5): '5Min',
+        (bt.TimeFrame.Minutes, 1):  '1Min',
+        (bt.TimeFrame.Minutes, 5):  '5Min',
         (bt.TimeFrame.Minutes, 15): '15Min',
         (bt.TimeFrame.Minutes, 60): '1H',
-        (bt.TimeFrame.Days, 1): '1D',
+        (bt.TimeFrame.Days, 1):     '1D',
     }
 
     def get_positions(self):
@@ -489,6 +489,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
           but we need to manipulate it to be able to work with it
           smoothly
         """
+
         def _granularity_to_timeframe(granularity):
             if granularity in [Granularity.Minute, Granularity.Ticks]:
                 timeframe = TimeFrame.Minute
@@ -573,19 +574,6 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
             else:
                 return df
 
-        # def _back_to_aggs(df):
-        #     response = []
-        #     for i, v in df.iterrows():
-        #         response.append({
-        #             "o": v.open,
-        #             "h": v.high,
-        #             "l": v.low,
-        #             "c": v.close,
-        #             "v": v.volume,
-        #             "t": i.timestamp() * 1000,
-        #         })
-        #     return Aggs({"results": response})
-
         if not start:
             timeframe = _granularity_to_timeframe(granularity)
             start = end - timedelta(days=1)
@@ -608,11 +596,11 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
     def streaming_prices(self,
                          dataname, timeframe, tmout=None, data_feed='iex'):
         q = queue.Queue()
-        kwargs = {'q': q,
-                  'dataname': dataname,
+        kwargs = {'q':         q,
+                  'dataname':  dataname,
                   'timeframe': timeframe,
                   'data_feed': data_feed,
-                  'tmout': tmout}
+                  'tmout':     tmout}
         t = threading.Thread(target=self._t_streaming_prices, kwargs=kwargs)
         t.daemon = True
         t.start()
@@ -628,7 +616,6 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
             method = StreamingMethod.MinuteAgg
         else:
             method = StreamingMethod.MinuteAgg
-
 
         streamer = Streamer(q,
                             api_key=self.p.key_id,
@@ -648,9 +635,9 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
         return self._value
 
     _ORDEREXECS = {
-        bt.Order.Market: 'market',
-        bt.Order.Limit: 'limit',
-        bt.Order.Stop: 'stop',
+        bt.Order.Market:    'market',
+        bt.Order.Limit:     'limit',
+        bt.Order.Stop:      'stop',
         bt.Order.StopLimit: 'stop_limit',
         bt.Order.StopTrail: 'trailing_stop',
     }
@@ -760,6 +747,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                 if trans is None:
                     break
                 self._process_transaction(order_id, trans)
+
         while True:
             try:
                 if self.q_ordercreate.empty():
@@ -847,7 +835,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
             self._transpend[oid].append(trans)
         self._process_transaction(oid, trans)
 
-    _X_ORDER_FILLED = ('partially_filled', 'filled', )
+    _X_ORDER_FILLED = ('partially_filled', 'filled',)
 
     def _process_transaction(self, oid, trans):
         try:
