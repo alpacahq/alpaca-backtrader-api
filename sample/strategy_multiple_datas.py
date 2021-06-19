@@ -16,7 +16,6 @@ IS_BACKTEST = True
 IS_LIVE = False
 SYMBOL1 = 'AAPL'
 SYMBOL2 = 'GOOG'
-USE_POLYGON = False
 
 
 class SmaCross1(bt.Strategy):
@@ -96,7 +95,6 @@ if __name__ == '__main__':
         key_id=ALPACA_API_KEY,
         secret_key=ALPACA_SECRET_KEY,
         paper=not IS_LIVE,
-        usePolygon=USE_POLYGON
     )
 
     DataFactory = store.getdata  # or use alpaca_backtrader_api.AlpacaData
@@ -104,23 +102,27 @@ if __name__ == '__main__':
         data0 = DataFactory(dataname=SYMBOL1,
                             historical=False,
                             timeframe=bt.TimeFrame.Ticks,
-                            backfill_start=False)
+                            backfill_start=False,
+                            data_feed='iex')
         data1 = DataFactory(dataname=SYMBOL2,
                             historical=False,
                             timeframe=bt.TimeFrame.Ticks,
-                            backfill_start=False)
+                            backfill_start=False,
+                            data_feed='iex')
         # or just alpaca_backtrader_api.AlpacaBroker()
         broker = store.getbroker()
         cerebro.setbroker(broker)
     else:
         data0 = DataFactory(dataname=SYMBOL1,
                             historical=True,
-                            fromdate=datetime(
-                                2015, 1, 1), timeframe=bt.TimeFrame.Days)
+                            fromdate=datetime(2015, 1, 1),
+                            timeframe=bt.TimeFrame.Days,
+                            data_feed='iex')
         data1 = DataFactory(dataname=SYMBOL2,
                             historical=True,
-                            fromdate=datetime(
-                                2015, 1, 1), timeframe=bt.TimeFrame.Days)
+                            fromdate=datetime(2015, 1, 1),
+                            timeframe=bt.TimeFrame.Days,
+                            data_feed='iex')
     cerebro.adddata(data0)
     cerebro.adddata(data1)
 

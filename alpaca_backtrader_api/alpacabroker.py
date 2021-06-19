@@ -86,7 +86,7 @@ class AlpacaBroker(with_metaclass(MetaAlpacaBroker, BrokerBase)):
 
             for name, data in iteritems(self.cerebro.datasbyname):
                 if name in broker_positions_symbols:
-                    size = int(broker_positions_mapped_by_symbol[name].qty)
+                    size = float(broker_positions_mapped_by_symbol[name].qty)
                     positions[data] = Position(
                         size,
                         float(broker_positions_mapped_by_symbol[

@@ -17,7 +17,6 @@ You have 3 options:
 IS_BACKTEST = False
 IS_LIVE = False
 symbol = "AAPL"
-USE_POLYGON = False
 
 
 class SmaCross(bt.SignalStrategy):
@@ -35,18 +34,19 @@ if __name__ == '__main__':
         key_id=ALPACA_API_KEY,
         secret_key=ALPACA_SECRET_KEY,
         paper=not IS_LIVE,
-        usePolygon=USE_POLYGON
     )
 
     DataFactory = store.getdata  # or use alpaca_backtrader_api.AlpacaData
     if IS_BACKTEST:
         data0 = DataFactory(dataname=symbol, historical=True,
-                            fromdate=datetime(
-                                2015, 1, 1), timeframe=bt.TimeFrame.Days)
+                            fromdate=datetime(2015, 1, 1),
+                            timeframe=bt.TimeFrame.Days,
+                            data_feed='iex')
     else:
         data0 = DataFactory(dataname=symbol,
                             historical=False,
-                            timeframe=bt.TimeFrame.Days)
+                            timeframe=bt.TimeFrame.Days,
+                            data_feed='iex')
         # or just alpaca_backtrader_api.AlpacaBroker()
         broker = store.getbroker()
         cerebro.setbroker(broker)

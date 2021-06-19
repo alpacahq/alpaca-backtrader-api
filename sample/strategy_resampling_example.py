@@ -9,7 +9,6 @@ ALPACA_SECRET_KEY = "<secret_key>"
 
 IS_LIVE = False
 symbol = "GOOG"
-USE_POLYGON = True
 
 
 class Resample(bt.Strategy):
@@ -39,7 +38,6 @@ if __name__ == '__main__':
         key_id=ALPACA_API_KEY,
         secret_key=ALPACA_SECRET_KEY,
         paper=not IS_LIVE,
-        usePolygon=USE_POLYGON
     )
     DataFactory = store.getdata
     data0 = DataFactory(dataname=symbol,
@@ -47,6 +45,7 @@ if __name__ == '__main__':
                         timeframe=bt.TimeFrame.Minutes,
                         qcheck=10.0,
                         backfill_start=False,
+                        data_feed='iex'
                         )
     broker = store.getbroker()
     cerebro.setbroker(broker)

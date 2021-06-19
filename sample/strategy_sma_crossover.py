@@ -14,8 +14,7 @@ You have 3 options:
 """
 IS_BACKTEST = False
 IS_LIVE = False
-symbol = "AA"
-USE_POLYGON = False
+symbol = "GOOG"
 
 
 class SmaCross1(bt.Strategy):
@@ -89,7 +88,6 @@ if __name__ == '__main__':
         key_id=ALPACA_API_KEY,
         secret_key=ALPACA_SECRET_KEY,
         paper=not IS_LIVE,
-        usePolygon=USE_POLYGON
     )
 
     DataFactory = store.getdata  # or use alpaca_backtrader_api.AlpacaData
@@ -98,12 +96,14 @@ if __name__ == '__main__':
                             historical=True,
                             fromdate=datetime(2020, 7, 1),
                             todate=datetime(2020, 7, 11),
-                            timeframe=bt.TimeFrame.Days)
+                            timeframe=bt.TimeFrame.Days,
+                            data_feed='iex')
     else:
         data0 = DataFactory(dataname=symbol,
                             historical=False,
                             timeframe=bt.TimeFrame.Ticks,
                             backfill_start=False,
+                            data_feed='iex'
                             )
         # or just alpaca_backtrader_api.AlpacaBroker()
         broker = store.getbroker()
