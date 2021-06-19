@@ -512,15 +512,16 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
             """
             got_all = False
             curr = end
-            response = []
+            response = pd.DataFrame()
             while not got_all:
                 timeframe = _granularity_to_timeframe(granularity)
-                r = self.oapi.get_bars(dataname, timeframe, start, curr)
+                r = self.oapi.get_bars(dataname,
+                                       timeframe,
+                                       start.isoformat(),
+                                       curr.isoformat())
                 if r:
                     earliest_sample = r[0].t
-                    r = r._raw
-                    r.extend(response)
-                    response = r
+                    response = pd.concat([r.df, response], axis=0)
                     if earliest_sample <= (pytz.timezone(NY).localize(
                             start) if not start.tzname() else start):
                         got_all = True
@@ -592,19 +593,12 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                                           timeframe, start, end)._raw
         else:
             response = _iterate_api_calls()
-        for bar in response:
-            # Aggs are in milliseconds, we multiply by 1000 to
-            # change seconds to ms
-            bar['t'] *= 1000
-        response = Aggs({"results": response})
-
-        cdl = response.df
+        cdl = response
         if granularity == Granularity.Minute:
             cdl = _clear_out_of_market_hours(cdl)
             cdl = _drop_early_samples(cdl)
         if compression != 1:
             response = _resample(cdl)
-        # response = _back_to_aggs(cdl)
         else:
             response = cdl
         response = response.dropna()
