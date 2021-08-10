@@ -441,7 +441,8 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
         if not dtend:
             dtend = pd.Timestamp('now', tz=NY)
         else:
-            dtend = pd.Timestamp(pytz.timezone('UTC').localize(dtend))
+            dtend = pd.Timestamp(pytz.timezone('UTC').localize(dtend)) if \
+              not dtend.tzname() else dtend
         if granularity == Granularity.Minute:
             calendar = trading_calendars.get_calendar(name='NYSE')
             while not calendar.is_open_on_minute(dtend):
@@ -455,7 +456,8 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
             delta = timedelta(days=days)
             dtbegin = dtend - delta
         else:
-            dtbegin = pd.Timestamp(pytz.timezone('UTC').localize(dtbegin))
+            dtbegin = pd.Timestamp(pytz.timezone('UTC').localize(dtbegin)) if \
+              not dtbegin.tzname() else dtbegin
         while dtbegin > dtend:
             # if we start the script during market hours we could get this
             # situation. this resolves that.
