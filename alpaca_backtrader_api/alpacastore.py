@@ -128,6 +128,7 @@ class Streamer:
         self.conn = Stream(api_key,
                            api_secret,
                            base_url,
+                           data_stream_url=data_url,
                            data_feed=data_feed)
         self.instrument = instrument
         self.method = method
