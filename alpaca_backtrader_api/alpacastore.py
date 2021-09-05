@@ -193,6 +193,9 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
 
       - ``account_tmout`` (default: ``10.0``): refresh period for account
         value/cash refresh
+
+      - ``order_tmout`` (default: ``0.05``): how often the order creation queue
+        is checked within _t_create_order
     '''
 
     BrokerCls = None  # broker class will autoregister
