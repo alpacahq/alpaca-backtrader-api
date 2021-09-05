@@ -203,6 +203,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
         ('secret_key', ''),
         ('paper', False),
         ('account_tmout', 10.0),  # account balance refresh timeout
+        ('order_tmout', 0.05),    # order status check timeout
         ('api_version', None)
     )
 
@@ -753,9 +754,10 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
 
         while True:
             try:
-                if self.q_ordercreate.empty():
+                try:
+                    msg = self.q_ordercreate.get(timeout=self.p.order_tmout)
+                except queue.Empty:
                     continue
-                msg = self.q_ordercreate.get()
                 if msg is None:
                     continue
                 oref, okwargs = msg
