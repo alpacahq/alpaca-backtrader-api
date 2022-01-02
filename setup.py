@@ -20,7 +20,6 @@ with open(os.path.join("requirements", "requirements.txt")) as reqs:
 with open(os.path.join("requirements", "requirements_test.txt")) as reqs:
     REQUIREMENTS_TEST = reqs.readlines()
 
-
 setup(
     name='alpaca-backtrader-api',
     version=version,
@@ -30,6 +29,15 @@ setup(
     author='Alpaca',
     author_email='oss@alpaca.markets',
     url='https://github.com/alpacahq/alpaca-backtrader-api',
+    classifiers=[
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
+
+        # Operating Systems on which it runs
+        'Operating System :: OS Independent',
+    ],
     keywords='financial,timeseries,api,trade,backtrader',
     packages=['alpaca_backtrader_api'],
     install_requires=REQUIREMENTS,
