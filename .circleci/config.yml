@@ -1,6 +1,6 @@
 version: 2
 jobs:
-  build-python36:
+  build-python38:
     docker:
       - image: python:3.8.11
     working_directory: ~/repo
