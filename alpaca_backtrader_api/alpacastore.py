@@ -193,6 +193,9 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
 
       - ``account_tmout`` (default: ``10.0``): refresh period for account
         value/cash refresh
+
+      - ``order_tmout`` (default: ``0.05``): how often the order creation queue
+        is checked within _t_create_order
     '''
 
     BrokerCls = None  # broker class will autoregister
@@ -203,6 +206,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
         ('secret_key', ''),
         ('paper', False),
         ('account_tmout', 10.0),  # account balance refresh timeout
+        ('order_tmout', 0.05),    # order status check timeout
         ('api_version', None)
     )
 
@@ -753,9 +757,10 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
 
         while True:
             try:
-                if self.q_ordercreate.empty():
+                try:
+                    msg = self.q_ordercreate.get(timeout=self.p.order_tmout)
+                except queue.Empty:
                     continue
-                msg = self.q_ordercreate.get()
                 if msg is None:
                     continue
                 oref, okwargs = msg
