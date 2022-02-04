@@ -203,7 +203,8 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
         ('secret_key', ''),
         ('paper', False),
         ('account_tmout', 10.0),  # account balance refresh timeout
-        ('api_version', None)
+        ('api_version', None),
+        ('oauth', None)
     )
 
     _DTEPOCH = datetime(1970, 1, 1)
@@ -244,7 +245,8 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
         self.oapi = API(self.p.key_id,
                         self.p.secret_key,
                         self.p.base_url,
-                        self.p.api_version)
+                        self.p.api_version,
+                        self.p.oauth)
 
         self._cash = 0.0
         self._value = 0.0
