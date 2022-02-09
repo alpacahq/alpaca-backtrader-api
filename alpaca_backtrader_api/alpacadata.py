@@ -2,6 +2,7 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 from datetime import timedelta
+import logging
 import pandas as pd
 from backtrader.feed import DataBase
 from backtrader import date2num, num2date
@@ -159,6 +160,7 @@ class AlpacaData(with_metaclass(MetaAlpacaData, DataBase)):
         self._candleFormat = 'bidask' if self.p.bidask else 'midpoint'
         self._timeframe = self.p.timeframe
         self.do_qcheck(True, 0)
+        self.logger = logging.getLogger(self.__class__.__name__)
         if self._timeframe not in [bt.TimeFrame.Ticks,
                                    bt.TimeFrame.Minutes,
                                    bt.TimeFrame.Days]:
@@ -179,6 +181,7 @@ class AlpacaData(with_metaclass(MetaAlpacaData, DataBase)):
         contractdetails if it exists
         """
         super(AlpacaData, self).start()
+        self.logger.info("Starting data feed: %s" % self.p.dataname)
 
         # Create attributes as soon as possible
         self._statelivereconn = False  # if reconnecting in live state
@@ -268,9 +271,11 @@ class AlpacaData(with_metaclass(MetaAlpacaData, DataBase)):
             if self._state == self._ST_LIVE:
                 try:
                     msg = (self._storedmsg.pop(None, None) or
-                           self.qlive.get(timeout=self._qcheck))
+                           self.qlive.get(timeout=self.p.qcheck))
                 except queue.Empty:
                     return None  # indicate timeout situation
+
+                self.logger.debug("Got msg: %s" % msg)
                 if msg is None:  # Conn broken during historical/backfilling
                     self.put_notification(self.CONNBROKEN)
                     # Try to reconnect
