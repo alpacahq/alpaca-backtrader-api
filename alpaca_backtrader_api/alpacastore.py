@@ -424,17 +424,18 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
 
         # don't use dt.replace. use localize
         # (https://stackoverflow.com/a/1592837/2739124)
-        cdl = cdl.loc[
-              pytz.timezone(NY).localize(dtbegin) if
-              not dtbegin.tzname() else dtbegin:
-              pytz.timezone(NY).localize(dtend) if
-              not dtend.tzname() else dtend
-              ].dropna(subset=['high'])
-        records = cdl.reset_index().to_dict('records')
-        for r in records:
-            r['time'] = r['timestamp']
-            q.put(r)
-        q.put({})  # end of transmission
+        if not cdl.empty:
+            cdl = cdl.loc[
+                pytz.timezone(NY).localize(dtbegin) if
+                not dtbegin.tzname() else dtbegin:
+                pytz.timezone(NY).localize(dtend) if
+                not dtend.tzname() else dtend
+                ].dropna(subset=['high'])
+            records = cdl.reset_index().to_dict('records')
+            for r in records:
+                r['time'] = r['timestamp']
+                q.put(r)
+            q.put({})  # end of transmission
 
     def _make_sure_dates_are_initialized_properly(self, dtbegin, dtend,
                                                   granularity):
@@ -504,7 +505,6 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
           but we need to manipulate it to be able to work with it
           smoothly
         """
-        self.logger.debug(f"Getting aggs for: {dataname} from: {start} to {end} by {compression} {granularity}")
 
         def _granularity_to_timeframe(granularity):
             if granularity in [Granularity.Minute, Granularity.Ticks]:
@@ -532,6 +532,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
             response = pd.DataFrame()
             while not got_all:
                 timeframe = _granularity_to_timeframe(granularity)
+                self.logger.debug(f"Getting bars for: {dataname} from: {start} to {end} by {compression} {granularity}")
                 r = self.oapi.get_bars(dataname,
                                        timeframe,
                                        start.isoformat(),
@@ -555,6 +556,8 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
             """
             only interested in samples between 9:30, 16:00 NY time
             """
+            if df.empty:
+                return df  
             return df.between_time("09:30", "16:00")
 
         def _drop_early_samples(df):
@@ -562,17 +565,19 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
             samples from server don't start at 9:30 NY time
             let's drop earliest samples
             """
+            if df.empty:
+                return df  
             for i, b in df.iterrows():
                 if i.time() >= dtime(9, 30):
                     return df[i:]
 
         def _resample(df):
-            if df.empty:
-                return df  
             """
             samples returned with certain window size (1 day, 1 minute) user
             may want to work with different window size (5min)
             """
+            if df.empty:
+                return df  
 
             if granularity == Granularity.Minute:
                 sample_size = f"{compression}Min"
@@ -593,21 +598,24 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                 return df
 
         if not start:
-            timeframe = _granularity_to_timeframe(granularity)
             start = end - timedelta(days=1)
-            response = self.oapi.get_bars(dataname,
-                                          timeframe, start, end).df
-        else:
-            response = _iterate_api_calls()
-        cdl = response
+        self.logger.debug(f"Getting bars for: {dataname} from: {start} to {end} by {compression} {granularity}")
+        response = _iterate_api_calls()
+        if response.empty: #for free accounts you cannot request the last 15 minutes of data, this results as an empty response
+                end = end - timedelta(minutes=15)
+                self.logger.debug(f"Got empty response! Trying bars for: {dataname} from: {start} to {end} by {compression} {granularity}")
+                response = _iterate_api_calls()
+
         self.logger.debug(f"Got: {response}")
-        if granularity == Granularity.Minute:
-            cdl = _clear_out_of_market_hours(cdl)
-            cdl = _drop_early_samples(cdl)
-        if compression != 1:
-            response = _resample(cdl)
-        else:
-            response = cdl
+        if not response.empty:
+            cdl = response
+            if granularity == Granularity.Minute:
+                cdl = _clear_out_of_market_hours(cdl)
+                cdl = _drop_early_samples(cdl)
+            if compression != 1:
+                response = _resample(cdl)
+            else:
+                response = cdl
         response = response.dropna()
         response = response[~response.index.duplicated()]
         return response
