@@ -275,7 +275,6 @@ class AlpacaData(with_metaclass(MetaAlpacaData, DataBase)):
                 except queue.Empty:
                     return None  # indicate timeout situation
 
-                self.logger.debug("Got msg: %s" % msg)
                 if msg is None:  # Conn broken during historical/backfilling
                     self.put_notification(self.CONNBROKEN)
                     # Try to reconnect
@@ -409,6 +408,7 @@ class AlpacaData(with_metaclass(MetaAlpacaData, DataBase)):
 
     def _load_tick(self, msg):
         dtobj = pd.Timestamp(msg['time'], unit='ns')
+        self.logger.debug("Loading tick at: %s %s" % (dtobj, msg))
         dt = date2num(dtobj)
         if dt <= self.lines.datetime[-1]:
             return False  # time already seen
@@ -433,6 +433,7 @@ class AlpacaData(with_metaclass(MetaAlpacaData, DataBase)):
 
     def _load_agg(self, msg):
         dtobj = pd.Timestamp(msg['time'], unit='ns')
+        self.logger.debug("Loading agg at: %s %s" % (dtobj, msg))
         dt = date2num(dtobj)
         if dt <= self.lines.datetime[-1]:
             return False  # time already seen
@@ -448,6 +449,7 @@ class AlpacaData(with_metaclass(MetaAlpacaData, DataBase)):
 
     def _load_history(self, msg):
         dtobj = msg['time'].to_pydatetime()
+        self.logger.debug("Loading history at: %s %s" % (dtobj, msg))
         dt = date2num(dtobj)
         if dt <= self.lines.datetime[-1]:
             return False  # time already seen

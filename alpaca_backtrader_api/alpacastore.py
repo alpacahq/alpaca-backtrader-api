@@ -25,8 +25,6 @@ import backtrader as bt
 from backtrader.metabase import MetaParams
 from backtrader.utils.py3 import queue, with_metaclass
 
-NY = 'America/New_York'
-
 
 # Extend the exceptions to support extra cases
 class AlpacaError(Exception):
@@ -426,9 +424,9 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
         # (https://stackoverflow.com/a/1592837/2739124)
         if not cdl.empty:
             cdl = cdl.loc[
-                pytz.timezone(NY).localize(dtbegin) if
+                pytz.utc.localize(dtbegin) if
                 not dtbegin.tzname() else dtbegin:
-                pytz.timezone(NY).localize(dtend) if
+                pytz.utc.localize(dtend) if
                 not dtend.tzname() else dtend
                 ].dropna(subset=['high'])
             records = cdl.reset_index().to_dict('records')
@@ -452,14 +450,14 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
         :return:
         """
         if not dtend:
-            dtend = pd.Timestamp('now', tz=NY)
+            dtend = pd.Timestamp('now', tz=pytz.utc)
         else:
-            dtend = pd.Timestamp(pytz.timezone('UTC').localize(dtend)) if \
+            dtend = pd.Timestamp(pytz.utc.localize(dtend)) if \
               not dtend.tzname() else dtend
         if granularity == Granularity.Minute:
             calendar = exchange_calendars.get_calendar(name='NYSE')
             while not calendar.is_open_on_minute(dtend.ceil(freq='T')):
-                dtend = dtend.replace(hour=15,
+                dtend = dtend.replace(hour=20,
                                       minute=59,
                                       second=0,
                                       microsecond=0)
@@ -469,13 +467,13 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
             delta = timedelta(days=days)
             dtbegin = dtend - delta
         else:
-            dtbegin = pd.Timestamp(pytz.timezone('UTC').localize(dtbegin)) if \
+            dtbegin = pd.Timestamp(pytz.utc.localize(dtbegin)) if \
               not dtbegin.tzname() else dtbegin
         while dtbegin > dtend:
             # if we start the script during market hours we could get this
             # situation. this resolves that.
             dtbegin -= timedelta(days=1)
-        return dtbegin.astimezone(NY), dtend.astimezone(NY)
+        return dtbegin.astimezone(pytz.utc), dtend.astimezone(pytz.utc)
 
     def get_aggs_from_alpaca(self,
                              dataname,
@@ -519,56 +517,34 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                 timeframe = TimeFrame.Day
             return timeframe
 
-        def _iterate_api_calls():
+        def _get_bars():
             """
-            you could get max 1000 samples from the server. if we need more
-            than that we need to do several api calls.
-
-            currently the alpaca api supports also 5Min and 15Min so we could
-            optimize server communication time by addressing timeframes
             """
-            got_all = False
-            curr = end
-            response = pd.DataFrame()
-            while not got_all:
-                timeframe = _granularity_to_timeframe(granularity)
-                self.logger.debug(f"Getting bars for: {dataname} from: {start} to {end} by {compression} {granularity}")
-                r = self.oapi.get_bars(dataname,
-                                       timeframe,
-                                       start.isoformat(),
-                                       curr.isoformat())
-                if r:
-                    earliest_sample = r[0].t
-                    response = pd.concat([r.df, response], axis=0)
-                    if earliest_sample <= (pytz.timezone(NY).localize(
-                            start) if not start.tzname() else start):
-                        got_all = True
-                    else:
-                        delta = timedelta(days=1) if granularity == "day" \
-                            else timedelta(minutes=1)
-                        curr = earliest_sample - delta
-                else:
-                    # no more data is available, let's return what we have
-                    break
-            return response
+            timeframe = _granularity_to_timeframe(granularity)
+            self.logger.debug(f"Getting bars for: {dataname} from: {start} to {end} by {compression} {granularity}")
+            response = self.oapi.get_bars(dataname,
+                                    timeframe,
+                                    start.isoformat(),
+                                    end.isoformat())
+            return response.df
 
         def _clear_out_of_market_hours(df):
             """
-            only interested in samples between 9:30, 16:00 NY time
+            only interested in samples between 9:30, 16:00 NY time, which is 14:30 to 21:00 UTC
             """
             if df.empty:
                 return df  
-            return df.between_time("09:30", "16:00")
+            return df.between_time("14:30", "21:00")
 
         def _drop_early_samples(df):
             """
-            samples from server don't start at 9:30 NY time
+            samples from server don't start at 9:30 NY time (14:30 UTC)
             let's drop earliest samples
             """
             if df.empty:
                 return df  
             for i, b in df.iterrows():
-                if i.time() >= dtime(9, 30):
+                if i.time() >= dtime(14, 30):
                     return df[i:]
 
         def _resample(df):
@@ -593,18 +569,17 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                 ])
             )
             if granularity == Granularity.Minute:
-                return df.between_time("09:30", "16:00")
+                return _clear_out_of_market_hours(df)
             else:
                 return df
 
         if not start:
             start = end - timedelta(days=1)
-        self.logger.debug(f"Getting bars for: {dataname} from: {start} to {end} by {compression} {granularity}")
-        response = _iterate_api_calls()
+        response = _get_bars()
         if response.empty: #for free accounts you cannot request the last 15 minutes of data, this results as an empty response
                 end = end - timedelta(minutes=15)
                 self.logger.debug(f"Got empty response! Trying bars for: {dataname} from: {start} to {end} by {compression} {granularity}")
-                response = _iterate_api_calls()
+                response = _get_bars()
 
         self.logger.debug(f"Got: {response}")
         if not response.empty:
@@ -618,6 +593,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                 response = cdl
         response = response.dropna()
         response = response[~response.index.duplicated()]
+        self.logger.debug(f"Response: {response}")
         return response
 
     def streaming_prices(self,
