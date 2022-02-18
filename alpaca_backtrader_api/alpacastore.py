@@ -761,6 +761,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                     continue
                 oref, okwargs = msg
                 try:
+                    self.logger.debug(f"Submitting order: {okwargs}")
                     o = self.oapi.submit_order(**okwargs)
                 except Exception as e:
                     self.put_notification(e)
@@ -768,14 +769,14 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                     continue
                 try:
                     oid = o.id
-                except Exception:
+                except Exception as e:
                     if 'code' in o._raw:
                         self.put_notification(f"error submitting order "
                                               f"code: {o.code}. msg: "
-                                              f"{o.message}")
+                                              f"{o.message}, desc: {o.description}")
                     else:
                         self.put_notification(
-                            "General error from the Alpaca server")
+                            f"General error from the Alpaca server: {e}")
                     self.broker._reject(oref)
                     continue
 
