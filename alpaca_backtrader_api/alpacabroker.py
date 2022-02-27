@@ -2,8 +2,11 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 import collections
+from curses import has_key
+import logging
 
 from backtrader import BrokerBase, Order, BuyOrder, SellOrder
+from backtrader.order import Order
 from backtrader.utils.py3 import with_metaclass, iteritems
 from backtrader.comminfo import CommInfoBase
 from backtrader.position import Position
@@ -55,7 +58,7 @@ class AlpacaBroker(with_metaclass(MetaAlpacaBroker, BrokerBase)):
 
     def __init__(self, **kwargs):
         super(AlpacaBroker, self).__init__()
-
+        self.logger = logging.getLogger(self.__class__.__name__)
         self.o = alpacastore.AlpacaStore(**kwargs)
 
         self.orders = collections.OrderedDict()  # orders by order id
@@ -102,6 +105,32 @@ class AlpacaBroker(with_metaclass(MetaAlpacaBroker, BrokerBase)):
         self.startingvalue = self.value = self.o.get_value()
         self.positions = self.update_positions()
 
+
+    _ORDEREXECS = {
+        'market': Order.Market,
+        'limit': Order.Limit,
+        'stop': Order.Stop,
+        'stop_limit':  Order.StopLimit,
+        'trailing_stop': Order.StopTrail
+    }
+
+    _ORDERSTATUS = {
+        'new': Order.Created,
+        'accepted': Order.Accepted,
+        'accepted_for_bidding': Order.Accepted,
+        'canceled': Order.Canceled,
+        'expired': Order.Expired,
+        'filled': Order.Completed,
+        'partially_filled': Order.Partial,
+        'pending_cancel': Order.Partial,
+        'pending_replace': Order.Partial,
+        'rejected': Order.Rejected,
+        'suspended': Order.Rejected,
+        'stopped': Order.Completed,
+        'calculated': Order.Partial
+    }
+
+
     def data_started(self, data):
         pos = self.getposition(data)
 
@@ -136,6 +165,35 @@ class AlpacaBroker(with_metaclass(MetaAlpacaBroker, BrokerBase)):
 
             order.completed()
             self.notify(order)
+
+        alpaca_orders = self.o.get_orders()
+        alpaca_orders = {o.symbol: o for o in alpaca_orders}
+        o = alpaca_orders.get(data._name, None)
+        if o is not None:
+            self.logger.debug(f"Got open order: {o}")
+            exectype = self._ORDEREXECS[o.order_type]
+            status = self._ORDERSTATUS[o.status]
+            price = o.stop_price if o.stop_price is not None else o.limit_price
+            if o.side == "buy":
+                order = BuyOrder(data=data,
+                    size = float(o.qty) if o.qty is not None else o.qty,
+                    price = float(price) if price is not None else None,
+                    exectype=exectype,
+                    simulated=True
+                )
+            if o.side == "sell":
+                order = SellOrder(data=data,
+                    size = float(o.qty) if o.qty is not None else o.qty,
+                    price = float(price) if price is not None else None,
+                    exectype=exectype,
+                    simulated=True
+                )
+            order.status = status
+            order.tradeid = o.id
+            self.o._orders[o.id] = order
+        self.notify(order)
+        return order
+
 
     def stop(self):
         super(AlpacaBroker, self).stop()

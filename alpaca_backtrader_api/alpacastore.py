@@ -303,6 +303,17 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
         (bt.TimeFrame.Days, 1):     '1D',
     }
 
+    def get_orders(self):
+        try:
+            orders = self.oapi.list_orders()
+        except (AlpacaError, AlpacaRequestError,):
+            return []
+        if orders:
+            if 'code' in orders[0]._raw:
+                return []
+        return orders
+
+
     def get_positions(self):
         try:
             positions = self.oapi.list_positions()
