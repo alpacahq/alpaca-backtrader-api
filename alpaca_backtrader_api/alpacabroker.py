@@ -191,8 +191,7 @@ class AlpacaBroker(with_metaclass(MetaAlpacaBroker, BrokerBase)):
             order.status = status
             order.tradeid = o.id
             self.o._orders[o.id] = order
-        self.notify(order)
-        return order
+            self.notify(order)
 
 
     def stop(self):
