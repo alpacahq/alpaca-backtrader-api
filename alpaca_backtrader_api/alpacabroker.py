@@ -190,7 +190,10 @@ class AlpacaBroker(with_metaclass(MetaAlpacaBroker, BrokerBase)):
                 )
             order.status = status
             order.tradeid = o.id
-            self.o._orders[o.id] = order
+            # icky, this is leaky, can we use the "create order" function with a "fake" order?
+            self.o._orders[order.ref] = o.id
+            self.o._ordersrev[o.id] = order.ref  # maps ids to backtrader order
+            self.orders[order.ref] = order
             self.notify(order)
 
 
@@ -381,8 +384,10 @@ class AlpacaBroker(with_metaclass(MetaAlpacaBroker, BrokerBase)):
 
     def cancel(self, order):
         if not self.orders.get(order.ref, False):
+            self.logger.warning(f"Cannot cancel unknown order: {order.ref}")
             return
         if order.status == Order.Cancelled:  # already cancelled
+            self.logger.warning(f"Order {order.ref} already canceled!")
             return
 
         return self.o.order_cancel(order)

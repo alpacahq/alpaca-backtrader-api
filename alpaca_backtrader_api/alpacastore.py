@@ -823,8 +823,10 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
 
             oid = self._orders.get(oref, None)
             if oid is None:
+                self.logger.warning(f"Cannot cancel unknown order: {oid}")
                 continue  # the order is no longer there
             try:
+                self.logger.debug(f"Canceling order: {oid}")
                 self.oapi.cancel_order(oid)
             except Exception as e:
                 self.put_notification(
