@@ -812,8 +812,22 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                 print(str(e))
 
     def order_cancel(self, order):
-        self.q_orderclose.put(order.ref)
-        return order
+        #self.q_orderclose.put(order.ref)
+        oref = order.ref
+        oid = self._orders.get(oref, None)
+        if oid is None:
+            self.logger.warning(f"Cannot cancel unknown order: {oid}")
+            pass  # the order is no longer there
+        try:
+            self.logger.debug(f"Canceling order: {oid}")
+            self.oapi.cancel_order(oid)
+        except Exception as e:
+            self.put_notification(
+                "Order not cancelled: {}, {}".format(
+                    oid, e))
+            pass
+
+        self.broker._cancel(oref)
 
     def _t_order_cancel(self):
         while True:
