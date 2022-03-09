@@ -894,6 +894,8 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
 
         elif ttype == 'expired':
             self.broker._expire(oref)
+        elif ttype == 'canceled':
+            self.broker._cancel(oref)
         else:  # default action ... if nothing else
             print("Process transaction - Order type: {}".format(ttype))
             self.broker._reject(oref)
