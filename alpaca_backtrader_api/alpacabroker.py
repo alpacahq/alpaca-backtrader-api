@@ -168,6 +168,7 @@ class AlpacaBroker(with_metaclass(MetaAlpacaBroker, BrokerBase)):
 
         alpaca_orders = self.o.get_orders()
         alpaca_orders = {o.symbol: o for o in alpaca_orders}
+        self.logger.debug("Checking for open orders...")
         o = alpaca_orders.get(data._name, None)
         if o is not None:
             self.logger.debug(f"Got open order: {o}")

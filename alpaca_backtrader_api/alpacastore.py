@@ -1,5 +1,6 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
+from curses import has_key
 import logging
 import os
 import collections
@@ -245,6 +246,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
         self._orders = collections.OrderedDict()  # map order.ref to oid
         self._ordersrev = collections.OrderedDict()  # map oid to order.ref
         self._transpend = collections.defaultdict(collections.deque)
+        self._cancel_pending = {}
 
         if self.p.paper:
             self._oenv = self._ENVPRACTICE
@@ -284,7 +286,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
         # signal end of thread
         if self.broker is not None:
             self.q_order.put(None)
-            self.q_orderclose.put(None)
+            #self.q_orderclose.put(None)
             self.q_account.put(None)
 
     def put_notification(self, msg, *args, **kwargs):
@@ -665,16 +667,20 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
         t.start()
 
         self.q_order = queue.Queue()
-        t = threading.Thread(target=self._t_order_create)
+        t = threading.Thread(target=self._t_order)
         t.daemon = True
         t.start()
 
-        self.q_orderclose = queue.Queue()
-        t = threading.Thread(target=self._t_order_cancel)
-        t.daemon = True
-        t.start()
+        #self.q_ordercreate = queue.Queue()
+        #t = threading.Thread(target=self._t_order_create)
+        #t.daemon = True
+        #t.start()
 
-        self.q_ordercanceled = queue.Queue()
+        #self.q_orderclose = queue.Queue()
+        #t = threading.Thread(target=self._t_order_cancel)
+        #t.daemon = True
+        #t.start()
+
         # Wait once for the values to be set
         self._evt_acct.wait(self.p.account_tmout)
 
@@ -757,17 +763,17 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
             try:
                 try:
                     msg = self.q_order.get(timeout=self.p.order_tmout)
+                    if msg is None: 
+                        continue
                     if isinstance(msg, tuple):
-                        oref, msg = tuple
-                        self._t_order_create(oref, msg)
+                        oref, okwargs = msg
+                        self._t_order_create(oref, okwargs)
                     else:
                         self._t_order_cancel(msg)
                 except queue.Empty:
                     continue
-                if msg is None:
-                    continue
             except Exception as e:
-                print(str(e))
+                traceback.print_exc()
 
     def _t_order_create(self, oref, okwargs):
         def _check_if_transaction_occurred(order_id):
@@ -781,42 +787,42 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                     break
                 self._process_transaction(order_id, trans)
 
-            try:
-                self.logger.debug(f"Submitting order: {okwargs}")
-                o = self.oapi.submit_order(**okwargs)
-            except Exception as e:
-                self.put_notification(e)
-                self.broker._reject(oref)
-                pass
-            try:
-                oid = o.id
-            except Exception as e:
-                if 'code' in o._raw:
-                    desc = o.description if hasattr(o, "description") else ''
-                    self.put_notification(f"error submitting order "
-                                            f"code: {o.code}. msg: "
-                                            f"{o.message}, desc: {desc}")
-                else:
-                    self.put_notification(
-                        f"General error from the Alpaca server: {e}")
-                self.broker._reject(oref)
-                pass
+        try:
+            self.logger.debug(f"Submitting order: {okwargs}")
+            o = self.oapi.submit_order(**okwargs)
+        except Exception as e:
+            self.put_notification(e)
+            self.broker._reject(oref)
+            pass
+        try:
+            oid = o.id
+        except Exception as e:
+            if 'code' in o._raw:
+                desc = o.description if hasattr(o, "description") else ''
+                self.put_notification(f"error submitting order "
+                                        f"code: {o.code}. msg: "
+                                        f"{o.message}, desc: {desc}")
+            else:
+                self.put_notification(
+                    f"General error from the Alpaca server: {e}")
+            self.broker._reject(oref)
+            pass
 
-            if okwargs['type'] == 'market':
-                self.broker._accept(oref)  # taken immediately
+        if okwargs['type'] == 'market':
+            self.broker._accept(oref)  # taken immediately
 
-            self._orders[oref] = oid
-            self._ordersrev[oid] = oref  # maps ids to backtrader order
-            _check_if_transaction_occurred(oid)
-            if o.legs:
-                index = 1
-                for leg in o.legs:
-                    self._orders[oref + index] = leg.id
-                    self._ordersrev[leg.id] = oref + index
-                    _check_if_transaction_occurred(leg.id)
-            self.broker._submit(oref)  # inside it submits the legs too
-            if okwargs['type'] == 'market':
-                self.broker._accept(oref)  # taken immediately
+        self._orders[oref] = oid
+        self._ordersrev[oid] = oref  # maps ids to backtrader order
+        _check_if_transaction_occurred(oid)
+        if o.legs:
+            index = 1
+            for leg in o.legs:
+                self._orders[oref + index] = leg.id
+                self._ordersrev[leg.id] = oref + index
+                _check_if_transaction_occurred(leg.id)
+        self.broker._submit(oref)  # inside it submits the legs too
+        if okwargs['type'] == 'market':
+            self.broker._accept(oref)  # taken immediately
 
 
     def order_cancel(self, order):
@@ -825,7 +831,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
     def _t_order_cancel(self, oref):
         oid = self._orders.get(oref, None)
         if oid is None:
-            self.logger.warning(f"Cannot cancel unknown order: {oid}")
+            self.logger.warning(f"Cannot cancel unknown order: {oid} (ref: {oref})")
             pass  # the order is no longer there
         try:
             self.logger.debug(f"Canceling order: {oid}")
@@ -836,12 +842,15 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                     oid, e))
             pass
 
-        try:
-            #wait for cancelation to succeed, helps avoid errors with future orders
-            self.q_ordercanceled.get(True, 1)
-        except queue.Empty:
-            pass
-        self.broker._cancel(oref)
+        #wait for cancelation to succeed, helps avoid errors with future orders
+        count = 0
+        while count <= 5 and oref in self._cancel_pending:
+            count += 1
+            time.sleep(.5)
+        if not oref in self._cancel_pending:
+            self.logger.debug(f"Successfully canceled order: {oid}")
+        else:
+            self.logger.debug(f"Timeout waiting for cancel on {oid}.  Giving up...")
 
     _X_ORDER_CREATE = (
         'new',
@@ -888,7 +897,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
         elif ttype == 'expired':
             self.broker._expire(oref)
         elif ttype == 'canceled':
-            self.q_ordercanceled.put(oref)
+            self._cancel_pending.pop(oref, None)
             self.broker._cancel(oref)
         else:  # default action ... if nothing else
             print("Process transaction - Order type: {}".format(ttype))
