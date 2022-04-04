@@ -796,6 +796,23 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
             pass
         try:
             oid = o.id
+            if okwargs['type'] == 'market':
+                self.broker._accept(oref)  # taken immediately
+
+            self._orders[oref] = oid
+            self._ordersrev[oid] = oref  # maps ids to backtrader order
+            _check_if_transaction_occurred(oid)
+            if o.legs:
+                index = 1
+                for leg in o.legs:
+                    self._orders[oref + index] = leg.id
+                    self._ordersrev[leg.id] = oref + index
+                    _check_if_transaction_occurred(leg.id)
+                #this seems entirely broken
+                self.broker._submit(oref)  # inside it submits the legs too
+                if okwargs['type'] == 'market':
+                    self.broker._accept(oref)  # taken immediately
+
         except Exception as e:
             if 'code' in o._raw:
                 desc = o.description if hasattr(o, "description") else ''
@@ -808,22 +825,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
             self.broker._reject(oref)
             pass
 
-        if okwargs['type'] == 'market':
-            self.broker._accept(oref)  # taken immediately
-
-        self._orders[oref] = oid
-        self._ordersrev[oid] = oref  # maps ids to backtrader order
-        _check_if_transaction_occurred(oid)
-        if o.legs:
-            index = 1
-            for leg in o.legs:
-                self._orders[oref + index] = leg.id
-                self._ordersrev[leg.id] = oref + index
-                _check_if_transaction_occurred(leg.id)
-        self.broker._submit(oref)  # inside it submits the legs too
-        if okwargs['type'] == 'market':
-            self.broker._accept(oref)  # taken immediately
-
+        
 
     def order_cancel(self, order):
         self.q_order.put(order.ref)
