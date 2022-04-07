@@ -877,10 +877,12 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
     def _process_transaction(self, oid, trans):
         try:
             oref = self._ordersrev.pop(oid)
+            self.logger.warning(f"Unable to find oref for oid = {oid}")
         except KeyError:
             return
 
         ttype = trans['status']
+        self.logger.debug(f"Processing transaction for oid = {oid} (oref = {oref}, type = {ttype})")
 
         if ttype in self._X_ORDER_FILLED:
             size = float(trans['filled_qty'])
@@ -902,5 +904,5 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
             self._cancel_pending.pop(oref, None)
             self.broker._cancel(oref)
         else:  # default action ... if nothing else
-            print("Process transaction - Order type: {}".format(ttype))
+            self.logger.debug(f"Processing {oref} as rejected by default (oid = {oid}, type = {ttype})")
             self.broker._reject(oref)
