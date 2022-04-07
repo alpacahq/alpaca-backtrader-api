@@ -852,7 +852,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
         if not oref in self._cancel_pending:
             self.logger.debug(f"Successfully canceled order: {oid}")
         else:
-            self.logger.debug(f"Timeout waiting for cancel on {oid}.  Giving up...")
+            self.logger.warning(f"Timeout waiting for cancel on {oid}.  Giving up...")
 
     _X_ORDER_CREATE = (
         'new',
@@ -877,8 +877,8 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
     def _process_transaction(self, oid, trans):
         try:
             oref = self._ordersrev.pop(oid)
-            self.logger.warning(f"Unable to find oref for oid = {oid}")
         except KeyError:
+            self.logger.warning(f"Unable to find oref for oid = {oid}")
             return
 
         ttype = trans['status']
