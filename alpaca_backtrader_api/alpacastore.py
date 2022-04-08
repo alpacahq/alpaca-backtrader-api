@@ -874,15 +874,20 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
 
     _X_ORDER_FILLED = ('partially_filled', 'filled',)
 
+    _X_ORDER_FINAL = ('filled', 'rejected', 'canceled', 'expired')
+
     def _process_transaction(self, oid, trans):
         try:
-            oref = self._ordersrev.pop(oid)
+            oref = self._ordersrev.get(oid)
         except KeyError:
             self.logger.warning(f"Unable to find oref for oid = {oid}")
             return
 
         ttype = trans['status']
         self.logger.debug(f"Processing transaction for oid = {oid} (oref = {oref}, type = {ttype})")
+
+        if ttype in self._X_ORDER_FINAL:
+            self._ordersrev.pop(oid, None) #we won't see anymore updates for this order
 
         if ttype in self._X_ORDER_FILLED:
             size = float(trans['filled_qty'])
@@ -903,6 +908,8 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
         elif ttype == 'canceled':
             self._cancel_pending.pop(oref, None)
             self.broker._cancel(oref)
-        else:  # default action ... if nothing else
-            self.logger.debug(f"Processing {oref} as rejected by default (oid = {oid}, type = {ttype})")
+        elif ttype == 'rejected':
             self.broker._reject(oref)
+        else:  # default action ... if nothing else
+            self.logger.warning(f"Ingnoring unknown transaction type: {ttype} for order: {oref} (oid = {oid})")
+            return
