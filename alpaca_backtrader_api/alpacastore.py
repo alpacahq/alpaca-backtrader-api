@@ -853,7 +853,9 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
         if not oref in self._cancel_pending:
             self.logger.debug(f"Successfully canceled order: {oid}")
         else:
+            self._cancel_pending.pop(oref, None)
             self.logger.warning(f"Timeout waiting for cancel on {oid}.  Giving up...")
+            self.broker._cancel(oref)
 
     _X_ORDER_CREATE = (
         'new',
@@ -881,7 +883,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
         try:
             oref = self._ordersrev.get(oid)
         except KeyError:
-            self.logger.warning(f"Unable to find oref for oid = {oid}")
+            self.logger.warning(f"Unable to find oref for oid = {oid} (type = {ttype})")
             return
 
         ttype = trans['status']
@@ -903,11 +905,13 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
             return
         elif ttype == 'expired':
             self.broker._expire(oref)
-        elif ttype == 'pending_cancel' or ttype == 'canceled': #seems like somtimes we only see the `pending_cancel` notification, and this seems to be enough
+        elif ttype == 'canceled': #seems like somtimes we only see the `pending_cancel` notification, and this seems to be enough
             self._cancel_pending.pop(oref, None)
             self.broker._cancel(oref)
         elif ttype == 'rejected':
             self.broker._reject(oref)
+        elif ttype == 'pending_cancel':
+            return
         else:  # default action ... if nothing else
             self.logger.warning(f"Ingnoring unknown transaction type: {ttype} for order: {oref} (oid = {oid})")
             return
