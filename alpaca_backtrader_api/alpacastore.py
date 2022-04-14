@@ -844,6 +844,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                     oid, e))
             pass
 
+        self._cancel_pending[oref]
         #wait for cancelation to succeed, helps avoid errors with future orders
         count = 0
         while count <= 5 and oref in self._cancel_pending:
@@ -895,17 +896,14 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                 size = -size
             price = float(trans['filled_avg_price'])
             self.broker._fill(oref, size, price, ttype=ttype)
-
         elif ttype in self._X_ORDER_CREATE:
             self.broker._accept(oref)
             self._ordersrev[oid] = oref
-
         elif ttype == 'calculated':
             return
-
         elif ttype == 'expired':
             self.broker._expire(oref)
-        elif ttype == 'canceled':
+        elif ttype == 'pending_cancel' or ttype == 'canceled': #seems like somtimes we only see the `pending_cancel` notification, and this seems to be enough
             self._cancel_pending.pop(oref, None)
             self.broker._cancel(oref)
         elif ttype == 'rejected':
