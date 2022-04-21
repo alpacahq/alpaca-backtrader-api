@@ -844,12 +844,12 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                     oid, e))
             pass
 
-        self._cancel_pending[oref]
+        self._cancel_pending[oref] = oid
         #wait for cancelation to succeed, helps avoid errors with future orders
         count = 0
         while count <= 5 and oref in self._cancel_pending:
             count += 1
-            time.sleep(.5)
+            time.sleep(1)
         if not oref in self._cancel_pending:
             self.logger.debug(f"Successfully canceled order: {oid}")
         else:
