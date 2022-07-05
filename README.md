@@ -26,7 +26,7 @@ $ pip3 install alpaca-backtrader-api
 
 you can find example strategies in the [samples](https://github.com/alpacahq/alpaca-backtrader-api/tree/master/sample) folder. 
 
-remember to add you credentials.
+remember to add your credentials.
 
 you can toggle between backtesting and paper trading by changing `ALPACA_PAPER`
 
