@@ -412,6 +412,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
         granularity: Granularity = self.get_granularity(timeframe, compression)
         dtbegin, dtend = self._make_sure_dates_are_initialized_properly(
             dtbegin, dtend, granularity)
+        self.logger.info(f"Fetching candles from {dtbegin} to {dtend}")
 
         if granularity is None:
             e = AlpacaTimeFrameError('granularity is missing')
@@ -470,12 +471,8 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
               not dtend.tzname() else dtend
         if granularity == Granularity.Minute:
             calendar = exchange_calendars.get_calendar(name='NYSE')
-            while not calendar.is_open_on_minute(dtend.ceil(freq='T')):
-                dtend = dtend.replace(hour=20,
-                                      minute=59,
-                                      second=0,
-                                      microsecond=0)
-                dtend -= timedelta(days=1)
+            if calendar.is_open_on_minute(dtend.ceil(freq='T')):
+                dtend = calendar.previous_open(dtend)
         if not dtbegin:
             days = 30 if granularity == Granularity.Daily else 3
             delta = timedelta(days=days)
