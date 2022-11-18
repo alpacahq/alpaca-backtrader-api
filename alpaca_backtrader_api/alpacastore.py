@@ -464,6 +464,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
         :param granularity:
         :return:
         """
+        return dtbegin.astimezone(pytz.utc), dtend.astimezone(pytz.utc)
         if not dtend:
             dtend = pd.Timestamp('now', tz=pytz.utc)
         else:

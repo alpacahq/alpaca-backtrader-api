@@ -99,11 +99,13 @@ class AlpacaBroker(with_metaclass(MetaAlpacaBroker, BrokerBase)):
 
     def start(self):
         super(AlpacaBroker, self).start()
+        self.logger.info("Starting Alpaca Broker...")
         self.addcommissioninfo(self, AlpacaCommInfo(mult=1.0, stocklike=False))
         self.o.start(broker=self)
         self.startingcash = self.cash = self.o.get_cash()
         self.startingvalue = self.value = self.o.get_value()
         self.positions = self.update_positions()
+        self._init_orders()
 
 
     _ORDEREXECS = {
@@ -131,71 +133,74 @@ class AlpacaBroker(with_metaclass(MetaAlpacaBroker, BrokerBase)):
     }
 
 
-    def data_started(self, data):
-        pos = self.getposition(data)
-
-        if pos.size < 0:
-            order = SellOrder(data=data,
-                              size=pos.size, price=pos.price,
-                              exectype=Order.Market,
-                              simulated=True)
-
-            order.addcomminfo(self.getcommissioninfo(data))
-            order.execute(0, pos.size, pos.price,
-                          0, 0.0, 0.0,
-                          pos.size, 0.0, 0.0,
-                          0.0, 0.0,
-                          pos.size, pos.price)
-
-            order.completed()
-            self.notify(order)
-
-        elif pos.size > 0:
-            order = BuyOrder(data=data,
-                             size=pos.size, price=pos.price,
-                             exectype=Order.Market,
-                             simulated=True)
-
-            order.addcomminfo(self.getcommissioninfo(data))
-            order.execute(0, pos.size, pos.price,
-                          0, 0.0, 0.0,
-                          pos.size, 0.0, 0.0,
-                          0.0, 0.0,
-                          pos.size, pos.price)
-
-            order.completed()
-            self.notify(order)
-
+    #def data_started(self, data):
+    def _init_orders(self):
         alpaca_orders = self.o.get_orders()
         alpaca_orders = {o.symbol: o for o in alpaca_orders}
-        self.logger.debug("Checking for open orders...")
-        o = alpaca_orders.get(data._name, None)
-        if o is not None:
-            self.logger.debug(f"Got open order: {o}")
-            exectype = self._ORDEREXECS[o.order_type]
-            status = self._ORDERSTATUS[o.status]
-            price = o.stop_price if o.stop_price is not None else o.limit_price
-            if o.side == "buy":
-                order = BuyOrder(data=data,
-                    size = float(o.qty) if o.qty is not None else o.qty,
-                    price = float(price) if price is not None else None,
-                    exectype=exectype,
-                    simulated=True
-                )
-            if o.side == "sell":
+        self.logger.debug(f"Found {len(alpaca_orders)} existing orders...")
+        for data in self.cerebro.datas:
+            self.logger.debug(f"Loading orders for: {data._name}")
+            pos = self.getposition(data)
+
+            if pos.size < 0:
                 order = SellOrder(data=data,
-                    size = float(o.qty) if o.qty is not None else o.qty,
-                    price = float(price) if price is not None else None,
-                    exectype=exectype,
-                    simulated=True
-                )
-            order.status = status
-            order.tradeid = o.id
-            # icky, this is leaky, can we use the "create order" function with a "fake" order?
-            self.o._orders[order.ref] = o.id
-            self.o._ordersrev[o.id] = order.ref  # maps ids to backtrader order
-            self.orders[order.ref] = order
-            self.notify(order)
+                                size=pos.size, price=pos.price,
+                                exectype=Order.Market,
+                                simulated=True)
+
+                order.addcomminfo(self.getcommissioninfo(data))
+                order.execute(0, pos.size, pos.price,
+                            0, 0.0, 0.0,
+                            pos.size, 0.0, 0.0,
+                            0.0, 0.0,
+                            pos.size, pos.price)
+
+                order.completed()
+                self.notify(order)
+
+            elif pos.size > 0:
+                order = BuyOrder(data=data,
+                                size=pos.size, price=pos.price,
+                                exectype=Order.Market,
+                                simulated=True)
+
+                order.addcomminfo(self.getcommissioninfo(data))
+                order.execute(0, pos.size, pos.price,
+                            0, 0.0, 0.0,
+                            pos.size, 0.0, 0.0,
+                            0.0, 0.0,
+                            pos.size, pos.price)
+
+                order.completed()
+                self.notify(order)
+
+            o = alpaca_orders.get(data._name, None)
+            if o is not None:
+                self.logger.debug(f"Got open order {o} for {data._name}")
+                exectype = self._ORDEREXECS[o.order_type]
+                status = self._ORDERSTATUS[o.status]
+                price = o.stop_price if o.stop_price is not None else o.limit_price
+                if o.side == "buy":
+                    order = BuyOrder(data=data,
+                        size = float(o.qty) if o.qty is not None else o.qty,
+                        price = float(price) if price is not None else None,
+                        exectype=exectype,
+                        simulated=True
+                    )
+                if o.side == "sell":
+                    order = SellOrder(data=data,
+                        size = float(o.qty) if o.qty is not None else o.qty,
+                        price = float(price) if price is not None else None,
+                        exectype=exectype,
+                        simulated=True
+                    )
+                order.status = status
+                order.tradeid = o.id
+                # icky, this is leaky, can we use the "create order" function with a "fake" order?
+                self.o._orders[order.ref] = o.id
+                self.o._ordersrev[o.id] = order.ref  # maps ids to backtrader order
+                self.orders[order.ref] = order
+                self.notify(order)
 
 
     def stop(self):
@@ -230,7 +235,7 @@ class AlpacaBroker(with_metaclass(MetaAlpacaBroker, BrokerBase)):
             return total_value
 
     def getposition(self, data, clone=True):
-        pos = self.positions[data]
+        pos = self.positions.get(data, Position(0, 0))
         if clone:
             pos = pos.clone()
 
