@@ -139,8 +139,9 @@ class AlpacaBroker(with_metaclass(MetaAlpacaBroker, BrokerBase)):
         alpaca_orders = {o.symbol: o for o in alpaca_orders}
         self.logger.debug(f"Found {len(alpaca_orders)} existing orders...")
         for data in self.cerebro.datas:
-            self.logger.debug(f"Loading orders for: {data._name}")
             pos = self.getposition(data)
+            if pos.size:
+                self.logger.debug(f"Creating initial orders for pos: {pos.size} in: {data._name}")
 
             if pos.size < 0:
                 order = SellOrder(data=data,
