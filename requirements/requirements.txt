@@ -3,5 +3,5 @@ alpaca-trade-api==3.0.0
 exchange-calendars==4.2.5
 matplotlib==3.7.1
 msgpack==1.0.4
-numpy==1.21.2
+numpy==1.24.2
 pandas==1.3.2
