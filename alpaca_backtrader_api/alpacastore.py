@@ -222,6 +222,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
     _ENVLIVE = 'live'
     _ENV_PRACTICE_URL = 'https://paper-api.alpaca.markets'
     _ENV_LIVE_URL = 'https://api.alpaca.markets'
+    _ENV_DATA_URL = 'https://data.alpaca.markets'
 
     @classmethod
     def getdata(cls, *args, **kwargs):
@@ -257,6 +258,10 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
         self.oapi = API(self.p.key_id,
                         self.p.secret_key,
                         self.p.base_url,
+                        self.p.api_version)
+        self.data_api = API(self.p.key_id,
+                        self.p.secret_key,
+                        self._ENV_DATA_URL,
                         self.p.api_version)
 
         self._cash = 0.0
@@ -464,28 +469,29 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
         :param granularity:
         :return:
         """
-        return dtbegin.astimezone(pytz.utc), dtend.astimezone(pytz.utc)
-        if not dtend:
-            dtend = pd.Timestamp('now', tz=pytz.utc)
-        else:
-            dtend = pd.Timestamp(pytz.utc.localize(dtend)) if \
-              not dtend.tzname() else dtend
-        if granularity == Granularity.Minute:
-            calendar = exchange_calendars.get_calendar(name='NYSE')
-            if calendar.is_open_on_minute(dtend.ceil(freq='T')):
-                dtend = calendar.previous_open(dtend)
-        if not dtbegin:
-            days = 30 if granularity == Granularity.Daily else 3
-            delta = timedelta(days=days)
-            dtbegin = dtend - delta
-        else:
-            dtbegin = pd.Timestamp(pytz.utc.localize(dtbegin)) if \
-              not dtbegin.tzname() else dtbegin
-        while dtbegin > dtend:
-            # if we start the script during market hours we could get this
-            # situation. this resolves that.
-            dtbegin -= timedelta(days=1)
-        return dtbegin.astimezone(pytz.utc), dtend.astimezone(pytz.utc)
+        #if not dtend:
+        #    dtend = pd.Timestamp('now', tz=pytz.utc)
+        #else:
+        #    dtend = pd.Timestamp(pytz.utc.localize(dtend)) if \
+        #      not dtend.tzname() else dtend
+        #if granularity == Granularity.Minute:
+        #    calendar = exchange_calendars.get_calendar(name='NYSE')
+        #    if calendar.is_open_on_minute(dtend.ceil(freq='T')):
+        #        dtend = calendar.previous_open(dtend)
+        #if not dtbegin:
+        #    days = 30 if granularity == Granularity.Daily else 3
+        #    delta = timedelta(days=days)
+        #    dtbegin = dtend - delta
+        #else:
+        #    dtbegin = pd.Timestamp(pytz.utc.localize(dtbegin)) if \
+        #      not dtbegin.tzname() else dtbegin
+        #while dtbegin > dtend:
+        #    # if we start the script during market hours we could get this
+        #    # situation. this resolves that.
+        #    dtbegin -= timedelta(days=1)
+        #return dtbegin.astimezone(pytz.utc), dtend.astimezone(pytz.utc)
+
+        return dtbegin.replace(tzinfo = pytz.utc), dtend.replace(tzinfo = pytz.utc)
 
     def get_aggs_from_alpaca(self,
                              dataname,
@@ -534,11 +540,15 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
             """
             timeframe = _granularity_to_timeframe(granularity)
             self.logger.debug(f"Getting bars for: {dataname} from: {start} to {end} by {compression} {granularity}")
-            response = self.oapi.get_bars(dataname,
-                                    timeframe,
-                                    start.isoformat(),
+            try:
+                response = self.data_api.get_bars(dataname,
+                                        timeframe,
+                                        start.isoformat(),
                                     end.isoformat())
-            return response.df
+                return response.df
+            except RuntimeError as e:
+                self.logger.warn("Got empty response from _get_bars!")
+                return None
 
         def _clear_out_of_market_hours(df):
             """
@@ -588,7 +598,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
         if not start:
             start = end - timedelta(days=1)
         response = _get_bars()
-        if response.empty: #for free accounts you cannot request the last 15 minutes of data, this results as an empty response
+        while response.empty: #for free accounts you cannot request the last 15 minutes of data, this results as an empty response
                 end = end - timedelta(minutes=15)
                 self.logger.debug(f"Got empty response! Trying bars for: {dataname} from: {start} to {end} by {compression} {granularity}")
                 response = _get_bars()

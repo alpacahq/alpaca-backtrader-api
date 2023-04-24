@@ -181,7 +181,7 @@ class AlpacaData(with_metaclass(MetaAlpacaData, DataBase)):
         contractdetails if it exists
         """
         super(AlpacaData, self).start()
-        self.logger.info("Starting data feed: %s" % self.p.dataname)
+        self.logger.info("Starting data feed: %s (from: %s to %s)" % (self.p.dataname, self.p.fromdate, self.p.todate))
 
         # Create attributes as soon as possible
         self._statelivereconn = False  # if reconnecting in live state
