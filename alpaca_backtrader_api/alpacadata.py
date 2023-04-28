@@ -218,7 +218,7 @@ class AlpacaData(with_metaclass(MetaAlpacaData, DataBase)):
 
     def _st_start(self, instart=True, tmout=None):
         if self.p.historical:
-            self.put_notification(self.DELAYED)
+            self.put_notification(self.LIVE)
             dtend = None
             if self.todate < float('inf'):
                 dtend = num2date(self.todate)
