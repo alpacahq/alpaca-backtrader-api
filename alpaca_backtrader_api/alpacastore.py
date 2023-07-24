@@ -796,9 +796,10 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                 self._process_transaction(order_id, trans)
 
         try:
-            self.logger.debug(f"Submitting order: {okwargs}")
+            self.logger.debug(f"Submitting order {oref} {okwargs}")
             o = self.oapi.submit_order(**okwargs)
         except Exception as e:
+            self.logger.error(f"Error submitting order {oref} {okwargs}", exc_info=e)
             self.put_notification(e)
             self.broker._reject(oref)
             pass
@@ -822,6 +823,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                     self.broker._accept(oref)  # taken immediately
 
         except Exception as e:
+            self.logger.error(f"Error submitting order {oref} {okwargs}", exc_info=e)
             if 'code' in o._raw:
                 desc = o.description if hasattr(o, "description") else ''
                 self.put_notification(f"error submitting order "
@@ -878,20 +880,20 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
         # store if not yet seen, else forward to processer
 
         oid = trans['id']
-
         if not self._ordersrev.get(oid, False):
+            self.logger.info(f"Storing pending transaction for {oid}")
             self._transpend[oid].append(trans)
-        self._process_transaction(oid, trans)
+        else:
+            self._process_transaction(oid, trans)
 
     _X_ORDER_FILLED = ('partially_filled', 'filled',)
 
     _X_ORDER_FINAL = ('filled', 'rejected', 'canceled', 'expired')
 
     def _process_transaction(self, oid, trans):
-        try:
-            oref = self._ordersrev.get(oid)
-        except KeyError:
-            self.logger.warning(f"Unable to find oref for oid = {oid} (type = {ttype})")
+        oref = self._ordersrev.get(oid, False)
+        if not oref: 
+            self.logger.warning(f"Unable to find oref for oid = {oid} (type = {ttype})", stack_info=True)
             return
 
         ttype = trans['status']
