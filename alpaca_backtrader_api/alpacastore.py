@@ -21,7 +21,6 @@ from alpaca_trade_api.rest import TimeFrame
 from alpaca_trade_api.stream import Stream
 import pytz
 import requests
-import pandas as pd
 
 import backtrader as bt
 from backtrader.metabase import MetaParams
