@@ -797,12 +797,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
         try:
             self.logger.debug(f"Submitting order {oref} {okwargs}")
             o = self.oapi.submit_order(**okwargs)
-        except Exception as e:
-            self.logger.error(f"Error submitting order {oref} {okwargs}", exc_info=e)
-            self.put_notification(e)
-            self.broker._reject(oref)
-            pass
-        try:
+            self.logger.debug(f"Order successfully submitted order {oref} (res: {o})")
             oid = o.id
             if okwargs['type'] == 'market':
                 self.broker._accept(oref)  # taken immediately
@@ -822,7 +817,7 @@ class AlpacaStore(with_metaclass(MetaSingleton, object)):
                     self.broker._accept(oref)  # taken immediately
 
         except Exception as e:
-            self.logger.error(f"Error submitting order {oref} {okwargs}", exc_info=e)
+            self.logger.error(f"Error handling submitted order {oref} {okwargs}", exc_info=e)
             if 'code' in o._raw:
                 desc = o.description if hasattr(o, "description") else ''
                 self.put_notification(f"error submitting order "

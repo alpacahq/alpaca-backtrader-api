@@ -196,7 +196,7 @@ class AlpacaBroker(with_metaclass(MetaAlpacaBroker, BrokerBase)):
                         simulated=True
                     )
                 order.status = status
-                order.tradeid = o.id
+                #order.tradeid = o.id
                 # icky, this is leaky, can we use the "create order" function with a "fake" order?
                 self.o._orders[order.ref] = o.id
                 self.o._ordersrev[o.id] = order.ref  # maps ids to backtrader order
