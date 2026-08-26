@@ -8,7 +8,7 @@ import urllib.request
 class FXMacroDataClient:
     """Client for adding macro, calendar, COT, and FX context to strategies."""
 
-    DEFAULT_BASE_URL = "https://fxmacrodata.com/api/v1/"
+    DEFAULT_BASE_URL = "https://api.fxmacrodata.com/v1/"
 
     def __init__(self, api_key=None, base_url=None, timeout=30):
         self.api_key = (
