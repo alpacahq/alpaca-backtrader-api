@@ -12,21 +12,28 @@ import time as _time
 import exchange_calendars
 import threading
 import asyncio
-
-import alpaca_trade_api as tradeapi
-from alpaca_trade_api.rest import TimeFrame
-from alpaca_trade_api.stream import Stream
-import pytz
-
 import warnings
+
 warnings.warn(
     "alpaca-backtrader-api currently depends on alpaca-trade-api, which has been "
     "archived and is no longer maintained. Future versions of this library will "
     "migrate to alpaca-py (https://github.com/alpacahq/alpaca-py). "
     "See issues #1128 and #569 for migration progress.",
-    DeprecationWarning,
+    UserWarning,
     stacklevel=2,
 )
+
+try:
+    import alpaca_trade_api as tradeapi
+    from alpaca_trade_api.rest import TimeFrame
+    from alpaca_trade_api.stream import Stream
+except ImportError as e:
+    raise ImportError(
+        "alpaca-trade-api could not be imported. This package depends on "
+        "alpaca-trade-api, which is archived and no longer maintained. "
+        "See https://github.com/alpacahq/alpaca-py for the successor library."
+    ) from e
+
 import requests
 import pandas as pd
 
