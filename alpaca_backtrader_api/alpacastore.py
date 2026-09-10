@@ -17,6 +17,16 @@ import alpaca_trade_api as tradeapi
 from alpaca_trade_api.rest import TimeFrame
 from alpaca_trade_api.stream import Stream
 import pytz
+
+import warnings
+warnings.warn(
+    "alpaca-backtrader-api currently depends on alpaca-trade-api, which has been "
+    "archived and is no longer maintained. Future versions of this library will "
+    "migrate to alpaca-py (https://github.com/alpacahq/alpaca-py). "
+    "See issues #1128 and #569 for migration progress.",
+    DeprecationWarning,
+    stacklevel=2,
+)
 import requests
 import pandas as pd
 
