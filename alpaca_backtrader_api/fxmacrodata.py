@@ -28,9 +28,13 @@ class FXMacroDataClient:
         if query:
             url = url + "?" + urllib.parse.urlencode(query)
 
-        req = urllib.request.Request(url, headers={"Accept": "application/json"})
+        req = urllib.request.Request(
+            url, headers={"Accept": "application/json"}
+        )
         try:
-            with urllib.request.urlopen(req, timeout=timeout or self.timeout) as resp:
+            with urllib.request.urlopen(
+                req, timeout=self.timeout if timeout is None else timeout
+            ) as resp:
                 payload = resp.read().decode("utf-8")
         except urllib.error.HTTPError as exc:
             body = exc.read().decode("utf-8", errors="replace")
@@ -82,7 +86,9 @@ class FXMacroDataClient:
     def risk_sentiment(self, **params):
         return self.request("risk_sentiment", params)
 
-    def macro_context(self, base, quote="usd", indicator="policy_rate", limit=10):
+    def macro_context(
+        self, base, quote="usd", indicator="policy_rate", limit=10
+    ):
         return {
             "base_catalogue": self.data_catalogue(base),
             "quote_catalogue": self.data_catalogue(quote),
